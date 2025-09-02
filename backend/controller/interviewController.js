@@ -47,33 +47,44 @@ export const getUserInterviews = async (req, res) => {
 
 
 // This is a dummy AI function. Replace this with your actual AI service calls.
+// Dummy AI function (replace with real AI later)
 const performDummyAIAnalysis = async (audioFilePath, questionText) => {
-  console.log(`AI is "analyzing" ${audioFilePath} for question: "${questionText}"`);
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 2000)); 
-  
-  // Return a structured response
+  console.log(`AI analyzing file: ${audioFilePath} for Q: "${questionText}"`);
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // simulate delay
   return {
-    fluency: `Speaking pace was clear and consistent.`,
-    correctness: `The answer correctly identified key concepts related to the question.`,
-    transcript: "This is a simulated transcript from the AI model."
+    fluency: "Speaking pace was clear and consistent.",
+    correctness: "Answer correctly covered the main concepts.",
+    transcript: "This is a simulated transcript from the AI model.",
   };
 };
 
 
 export const analyzeAnswer = async (req, res) => {
   try {
+    // ensure file uploaded
     if (!req.file) {
       return res.status(400).json({ message: "No audio file was uploaded." });
     }
+
+    // ensure question passed
     const { question } = req.body;
     if (!question) {
-        return res.status(400).json({ message: "The question is missing from the request." });
+      return res.status(400).json({ message: "The question is missing from the request." });
     }
 
+    // ensure user from middleware (auth check)
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized. Please log in again." });
+    }
+
+    // run dummy AI
     const analysisResult = await performDummyAIAnalysis(req.file.path, question);
-    
-    res.status(200).json(analysisResult);
+
+    res.status(200).json({
+      user: req.user._id,
+      question,
+      analysis: analysisResult,
+    });
   } catch (err) {
     console.error("Analysis controller error:", err);
     res.status(500).json({ message: "Server error during audio analysis." });
