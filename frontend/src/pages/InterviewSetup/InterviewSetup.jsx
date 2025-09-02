@@ -40,6 +40,7 @@ function InterviewSetup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submit triggred")
     setIsLoading(true);
 
     try {
@@ -76,7 +77,7 @@ function InterviewSetup() {
       setIsLoading(false);
     }
   };
-
+  console.log("✅ InterviewSetup page loaded");
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-8 relative">

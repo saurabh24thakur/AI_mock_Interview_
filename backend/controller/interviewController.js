@@ -82,7 +82,7 @@ export const analyzeAnswer = async (req, res) => {
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export const generateQuestions = async (req, res) => {
   try {
@@ -129,6 +129,7 @@ export const generateQuestions = async (req, res) => {
 export const generateQuestionsFromJD = async (req, res) => {
   try {
     const { experience, description, expertise } = req.body;
+    console.log( experience, description, expertise)
 
     if (!experience || !description || !expertise) {
       return res.status(400).json({ message: "Experience, description, and expertise are required fields." });
@@ -159,6 +160,7 @@ export const generateQuestionsFromJD = async (req, res) => {
       // Clean the response in case the AI adds markdown backticks
       const cleanedText = rawText.replace(/```json\n?|\n?```/g, '');
       questionsArray = JSON.parse(cleanedText);
+      console.log(cleanedText)
     } catch (e) {
       console.error("Failed to parse Gemini response:", rawText);
       return res.status(500).json({ message: "Failed to parse AI response. The format was invalid." });

@@ -30,7 +30,7 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="interview" element={<InterviewPage />} />
-        <Route path="/interview-setup" element={<InterviewSetup />} />
+        <Route path="interview-setup" element={<InterviewSetup />} />
       </Route>
     </Routes>
   )
