@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+tmp/
+temp/
+
+# Logs and PIDs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pids/
+*.pid
+*.pid.lock
+
+# Tests/Coverage
+coverage/
+.nyc_output/
+
+# Caches
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+
+# Environment files (keep examples)
+.env
+.env.*
+!.env.example
+!.env*.example
+!.env*.template
+
+# File uploads (if storing locally)
+uploads/
+public/uploads/
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Optional: MongoDB local data (uncomment if you ever run mongod in the repo)
+# data/
+# dump/
