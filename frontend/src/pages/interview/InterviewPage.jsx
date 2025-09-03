@@ -1,7 +1,6 @@
 // FILE: frontend/src/pages/InterviewPage.jsx
-
 import React, { useRef, useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom"; // <-- 1. IMPORTED
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { serverURL } from "../../App";
 
@@ -13,33 +12,61 @@ function InterviewPage() {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [fluency, setFluency] = useState("Waiting for your response...");
   const [correctness, setCorrectness] = useState("Waiting for your response...");
-  
-  // --- 2. STATE INITIALIZATION CHANGED ---
+
   const [questions, setQuestions] = useState([]);
-  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [completedQuestions, setCompletedQuestions] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [statusText, setStatusText] = useState("Click 'Submit Answer' to start recording.");
+  const [statusText, setStatusText] = useState(
+    "Click 'Submit Answer' to start recording."
+  );
 
-  // --- 3. ADDED useEffect TO GET QUESTIONS ---
-  const location = useLocation();
   const navigate = useNavigate();
 
+  // --- FETCH QUESTIONS FROM BACKEND ---
   useEffect(() => {
-    if (location.state?.questions && location.state.questions.length > 0) {
-      setQuestions(location.state.questions);
-    } else {
-      alert("Please set up your interview first.");
-      navigate("/interview-setup");
-    }
-  }, [location, navigate]);
+    const fetchQuestions = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        const token = userInfo ? userInfo.token : null;
 
-  // --- All other functions (startCamera, stopCamera, etc.) remain the same ---
+        if (!token) {
+          alert("You are not logged in. Please log in first.");
+          navigate("/login");
+          return;
+        }
+
+        // call your backend route
+        const { data } = await axios.post(
+          `${serverURL}/api/interviews/generate-questions`,
+          { jobRole: "Frontend Developer", difficulty: "medium" }, // or dynamic values
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (data.questions && data.questions.length > 0) {
+          setQuestions(data.questions);
+        } else {
+          alert("No questions generated. Please try again.");
+        }
+      } catch (err) {
+        console.error("Error fetching questions:", err);
+        alert("Failed to fetch questions.");
+      }
+    };
+
+    fetchQuestions();
+  }, [navigate]);
+
+  // --- CAMERA + RECORDING FUNCTIONS (unchanged) ---
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
       videoRef.current.srcObject = stream;
       setIsCameraOn(true);
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -51,23 +78,21 @@ function InterviewPage() {
       mediaRecorderRef.current.onstop = submitAudioForAnalysis;
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert("Error: Could not access your camera or microphone. Please check browser permissions.");
+      alert("Error: Could not access camera/microphone.");
     }
   };
 
   const stopCamera = () => {
     const stream = videoRef.current.srcObject;
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
+    if (stream) stream.getTracks().forEach((t) => t.stop());
     setIsCameraOn(false);
     setIsRecording(false);
   };
 
   const handleRecordingToggle = () => {
     if (!isCameraOn) {
-        alert("Please start your camera first.");
-        return;
+      alert("Please start your camera first.");
+      return;
     }
     if (isRecording) {
       mediaRecorderRef.current.stop();
@@ -89,50 +114,73 @@ function InterviewPage() {
     const formData = new FormData();
     formData.append("audio", audioBlob, "user-answer.webm");
     formData.append("question", questions[currentQuestionIndex]);
+
     try {
-      const { data } = await axios.post(`${serverURL}/api/interviews/analyze`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setFluency(data.fluency || "Analysis complete.");
-      setCorrectness(data.correctness || "Analysis complete.");
-      const currentQ = questions[currentQuestionIndex];
-      setCompletedQuestions((prev) => [...prev, currentQ]);
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-        setStatusText("Click 'Submit Answer' to start recording for the next question.");
-      } else {
-        setStatusText("Interview complete! Great job.");
-        alert("You have completed all questions!");
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const token = userInfo ? userInfo.token : null;
+      if (!token) {
+        alert("Not logged in.");
+        navigate("/login");
+        return;
       }
-    } catch (error) {
-      console.error("Analysis API error:", error);
-      alert("Sorry, there was an error analyzing your response.");
+
+      const { data } = await axios.post(
+        `${serverURL}/api/interviews/analyze`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setFluency(data.analysis.fluency || "Analysis complete.");
+      setCorrectness(data.analysis.correctness || "Analysis complete.");
+      setCompletedQuestions((prev) => [...prev, questions[currentQuestionIndex]]);
+
+      setCurrentQuestionIndex((prevIndex) => {
+        if (prevIndex < questions.length - 1) {
+          setStatusText("Click 'Submit Answer' to start recording next question.");
+          return prevIndex + 1;
+        } else {
+          setStatusText("Interview complete! 🎉");
+          alert("All questions answered!");
+          return prevIndex;
+        }
+      });
+    } catch (err) {
+      console.error("Analysis API error:", err);
       setFluency("Error during analysis.");
       setCorrectness("Error during analysis.");
     } finally {
-        setIsAnalyzing(false);
+      setIsAnalyzing(false);
     }
   };
 
-  // --- 4. ADDED LOADING STATE ---
+  // --- LOADING STATE ---
   if (questions.length === 0) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <h1 className="text-2xl font-semibold text-gray-700">Loading Interview...</h1>
+        <h1 className="text-2xl font-semibold text-gray-700">
+          Loading Interview Questions...
+        </h1>
       </div>
     );
   }
 
-  // --- Your JSX remains unchanged ---
+  // --- JSX ---
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-r from-blue-50 to-blue-100">
-      {/* ... your entire JSX structure ... */}
-       <div className="w-full md:w-2/3 flex flex-col items-center justify-center p-8">
+      {/* Left side: camera + interviewer */}
+      <div className="w-full md:w-2/3 flex flex-col items-center justify-center p-8">
         <h1 className="text-3xl font-bold text-blue-700 mb-6">
           Mock Interview Session
         </h1>
+
+        {/* video & interviewer */}
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="relative bg-white shadow-xl rounded-2xl p-4 w-72 h-72 flex flex-col items-center">
+          <div className="relative bg-white shadow-xl rounded-2xl p-4 w-72 h-72">
             <video
               ref={videoRef}
               autoPlay
@@ -141,21 +189,20 @@ function InterviewPage() {
               className="w-full h-full rounded-xl object-cover border-2 border-blue-500"
             ></video>
             <span className="absolute bottom-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-              You (Candidate)
+              You
             </span>
           </div>
           <div className="relative bg-white shadow-xl rounded-2xl p-4 w-72 h-72 flex flex-col items-center justify-center">
             <img
               src="https://i.ibb.co/6mZ3Q9m/ai-avatar.png"
               alt="AI Interviewer"
-              className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
+              className="w-32 h-32 rounded-full object-cover"
             />
             <p className="mt-3 font-semibold text-gray-700">AI Interviewer</p>
-            <span className="absolute bottom-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-              Interviewer
-            </span>
           </div>
         </div>
+
+        {/* current question */}
         <div className="mt-8 bg-white shadow-md rounded-xl px-6 py-4 w-full max-w-2xl text-center">
           <h2 className="text-lg font-semibold text-gray-800">Current Question</h2>
           <p className="text-blue-700 mt-2 text-xl font-medium">
@@ -164,40 +211,37 @@ function InterviewPage() {
           <p className="mt-1 text-sm text-gray-500">
             Question {currentQuestionIndex + 1} of {questions.length}
           </p>
-          {/* New Status Text */}
-          <p className="mt-2 text-sm text-gray-600 font-medium">{statusText}</p>
+          <p className="mt-2 text-sm text-gray-600">{statusText}</p>
         </div>
+
+        {/* controls */}
         <div className="flex space-x-4 mt-6">
           {!isCameraOn ? (
-            <button
-              onClick={startCamera}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
-            >
+            <button onClick={startCamera} className="px-6 py-2 bg-blue-600 text-white rounded-lg">
               Start Camera
             </button>
           ) : (
-            <button
-              onClick={stopCamera}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
-            >
+            <button onClick={stopCamera} className="px-6 py-2 bg-red-600 text-white rounded-lg">
               Stop Camera
             </button>
           )}
           <button
             onClick={handleRecordingToggle}
-            disabled={isAnalyzing || !isCameraOn} // Disable button during analysis or if camera is off
-            className="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={isAnalyzing || !isCameraOn}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:bg-gray-400"
           >
-            {isAnalyzing ? "Analyzing..." : isRecording ? "Stop & Submit" : "Submit Answer"}
+            {isAnalyzing
+              ? "Analyzing..."
+              : isRecording
+              ? "Stop & Submit"
+              : "Submit Answer"}
           </button>
         </div>
       </div>
 
-      {/* Right Side - Observations + Completed */}
-      <div className="w-full md:w-1/3 flex flex-col justify-start p-8 bg-white shadow-inner overflow-y-auto">
-        <h2 className="text-2xl font-semibold text-blue-700 mb-4">
-          Live Observations
-        </h2>
+      {/* Right side: feedback */}
+      <div className="w-full md:w-1/3 p-8 bg-white overflow-y-auto">
+        <h2 className="text-2xl font-semibold text-blue-700 mb-4">Live Observations</h2>
         <div className="bg-blue-50 p-4 rounded-lg shadow mb-4">
           <h3 className="font-medium text-gray-800">Fluency</h3>
           <p className="text-gray-600">{fluency}</p>
@@ -206,9 +250,8 @@ function InterviewPage() {
           <h3 className="font-medium text-gray-800">Correctness</h3>
           <p className="text-gray-600">{correctness}</p>
         </div>
-        <h2 className="text-lg font-semibold text-blue-700 mb-2">
-          Completed Questions
-        </h2>
+
+        <h2 className="text-lg font-semibold text-blue-700 mb-2">Completed Questions</h2>
         <ul className="list-disc pl-5 text-gray-700 space-y-2">
           {completedQuestions.map((q, i) => (
             <li key={i} className="line-through text-gray-500">

@@ -2,13 +2,22 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// Signup controller
+// helper to generate JWT
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id.toString(), username: user.username, type: user.type || "student" },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
+
+
+// --- SIGNUP ---
 export const registerUser = async (req, res) => {
-  // It now expects 'username' from the request body
-  const { name, email, password, username } = req.body;
+  const { name, email, password, username, type } = req.body;
 
   try {
-    // Check if email or username already exist
+    // check if email or username already exist
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
       if (userExists.email === email) {
@@ -19,15 +28,13 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    // NOTE: The password hashing is now handled by the .pre("save") hook in your schema,
-    // so we don't need to hash it here manually.
-    
-    // Create user with all required fields
+    // NOTE: password hashing is handled by pre("save") in schema
     const user = await User.create({
       name,
       email,
-      username, // Pass the username to the create function
-      password, // Pass the plain password, the schema will hash it
+      username,
+      password, // schema hook will hash
+      type: type || "student",
     });
 
     if (user) {
@@ -36,9 +43,8 @@ export const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         username: user.username,
-        token: jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-          expiresIn: "30d",
-        }),
+        type: user.type,
+        token: generateToken(user), // ✅ correct token
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -48,7 +54,8 @@ export const registerUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-// Login controller
+
+// --- LOGIN ---
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -59,33 +66,33 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "❌ Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
     res.json({
       _id: user._id,
       name: user.name,
       username: user.username,
       email: user.email,
-      token,
+      type: user.type,
+      token: generateToken(user), // ✅ correct token
     });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get user profile
+// --- GET USER BY ID (admin or public profile view) ---
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
-    console.error(err);
+    console.error("Get user profile error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// --- GET LOGGED-IN USER PROFILE ---
 export const getLoggedInUserProfile = async (req, res) => {
   if (req.user) {
     res.status(200).json(req.user);

@@ -1,10 +1,11 @@
 import './App.css'
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
+
 import LandingPage from './pages/landingPage/LandingPage'
 import Signup from './pages/Signup/SignUp'
 import Login from './pages/login/Login'
 import Navbar from './component/Navbar'
-import { Outlet } from "react-router-dom";
+
 import Dashboard from './pages/dashboard/DashBoard';
 import AddInterview from './component/AddInterview';
 import InterviewPage from './pages/interview/InterviewPAge';
