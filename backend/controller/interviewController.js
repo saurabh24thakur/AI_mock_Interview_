@@ -1,5 +1,10 @@
+import fs from "fs";
 import Interview from "../models/Interview.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// ==================== GEMINI SETUP ====================
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ==================== SAVE INTERVIEW REPORT ====================
 export const saveInterview = async (req, res) => {
@@ -60,57 +65,100 @@ export const getUserInterviews = async (req, res) => {
   }
 };
 
-// ==================== DUMMY AI ANALYSIS ====================
-const performDummyAIAnalysis = async (audioFilePath, questionText) => {
-  console.log(`AI analyzing file: ${audioFilePath} for Q: "${questionText}"`);
-  await new Promise((resolve) => setTimeout(resolve, 2000)); // simulate delay
-  return {
-    fluency: "Speaking pace was clear and consistent.",
-    correctness: "Answer correctly covered the main concepts.",
-    transcript: "This is a simulated transcript from the AI model.",
-  };
-};
+// ==================== TRANSCRIBE AUDIO ====================
+async function transcribeAudio(filePath) {
+  const audioData = fs.readFileSync(filePath);
+  const base64Audio = audioData.toString("base64");
 
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        mimeType: "audio/webm", // frontend MediaRecorder default
+        data: base64Audio,
+      },
+    },
+    { text: "Transcribe this audio into plain text only." },
+  ]);
+
+  return result.response.text();
+}
+
+// ==================== GEMINI ANALYSIS ====================
+async function performGeminiAnalysis(transcript, questionText) {
+  const prompt = `
+    You are analyzing an interview answer.
+
+    Question: "${questionText}"
+    Candidate's Answer: "${transcript}"
+
+    Rate the candidate on a scale of 1–10 for:
+    - Fluency (clarity, smoothness of speech)
+    - Confidence (tone, assertiveness)
+    - Correctness (how relevant & accurate the answer is)
+
+    Also infer:
+    - Inner Tone: positive | neutral | negative
+    - Body Language: good | average | poor (estimate from pauses/hesitations)
+
+    Output strictly as JSON:
+    {
+      "fluency": number,
+      "confidence": number,
+      "correctness": number,
+      "innerTone": "positive | neutral | negative",
+      "bodyLanguage": "good | average | poor"
+    }
+  `;
+
+  const result = await model.generateContent(prompt);
+  const raw = result.response.text();
+
+  try {
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.error("Gemini response parse failed:", raw);
+    return {
+      fluency: 5,
+      confidence: 5,
+      correctness: 5,
+      innerTone: "neutral",
+      bodyLanguage: "average",
+    };
+  }
+}
+
+// ==================== ANALYZE ANSWER ====================
 export const analyzeAnswer = async (req, res) => {
   try {
     if (!req.file) {
-      return res
-        .status(400)
-        .json({ message: "No audio file was uploaded." });
+      return res.status(400).json({ message: "❌ No audio file uploaded" });
     }
 
     const { question } = req.body;
     if (!question) {
-      return res
-        .status(400)
-        .json({ message: "The question is missing from the request." });
+      return res.status(400).json({ message: "❌ Question is required" });
     }
 
-    if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized. Please log in again." });
-    }
+    // Step 1: Transcribe audio
+    const transcript = await transcribeAudio(req.file.path);
 
-    const analysisResult = await performDummyAIAnalysis(
-      req.file.path,
-      question
-    );
+    // Step 2: Analyze transcript with Gemini
+    const analysis = await performGeminiAnalysis(transcript, question);
 
     res.status(200).json({
       user: req.user._id,
       question,
-      analysis: analysisResult,
+      transcript,
+      analysis,
     });
   } catch (err) {
     console.error("Analysis controller error:", err);
-    res.status(500).json({ message: "Server error during audio analysis." });
+    res.status(500).json({ message: "Server error during AI analysis" });
+  } finally {
+    if (req.file) fs.unlinkSync(req.file.path); // cleanup
   }
 };
-
-// ==================== GEMINI SETUP ====================
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ==================== GENERATE QUESTIONS ====================
 export const generateQuestions = async (req, res) => {
@@ -124,10 +172,10 @@ export const generateQuestions = async (req, res) => {
     }
 
     const prompt = `
-      Generate 5 interview questions for a candidate applying for the role of "${jobRole}" at a "${difficulty}" level.
-      The questions should cover a mix of technical, behavioral, and situational topics relevant to this role.
-      
-      IMPORTANT: Provide the output ONLY as a JSON array of strings. No intro text, no explanations, no markdown.
+      Generate 5 interview questions for "${jobRole}" at "${difficulty}" level.
+      Include technical, behavioral, and situational questions.
+
+      Output ONLY JSON array of strings.
     `;
 
     const result = await model.generateContent(prompt);
@@ -135,18 +183,18 @@ export const generateQuestions = async (req, res) => {
 
     let questionsArray;
     try {
-      const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleanedText);
+      const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
+      questionsArray = JSON.parse(cleaned);
     } catch (e) {
       console.error("Failed to parse Gemini response:", text);
       return res
         .status(500)
-        .json({ message: "Failed to parse AI response. The format was invalid." });
+        .json({ message: "Invalid AI response format" });
     }
 
     res.status(200).json({ questions: questionsArray });
   } catch (error) {
-    console.error("Error generating questions with Gemini:", error);
+    console.error("Error generating questions:", error);
     res
       .status(500)
       .json({ message: "Server error while generating questions." });
@@ -157,39 +205,37 @@ export const generateQuestions = async (req, res) => {
 export const generateQuestionsFromJD = async (req, res) => {
   try {
     const { experience, description, expertise } = req.body;
-    console.log("JD inputs:", experience, description, expertise);
 
     if (!experience || !description || !expertise) {
       return res
         .status(400)
-        .json({ message: "Experience, description, and expertise are required fields." });
+        .json({ message: "Experience, description, and expertise are required" });
     }
 
     const prompt = `
-      Act as a senior hiring manager. You are creating an interview for a candidate with the following profile:
-      - Years of Experience: ${experience}
-      - Key Skills: ${expertise}
+      You are a senior hiring manager.
+
+      Candidate profile:
+      - Experience: ${experience}
+      - Expertise: ${expertise}
       - Job Description: "${description}"
 
-      Based on this information, generate 7 diverse interview questions.
-      Mix of technical, behavioral, and situational questions.
-      
-      IMPORTANT: Provide the output ONLY as a JSON array of strings, no extra text, no markdown.
+      Generate 7 diverse interview questions (technical, behavioral, situational).
+      Output ONLY JSON array of strings.
     `;
 
     const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
+    const raw = result.response.text();
 
     let questionsArray;
     try {
-      const cleanedText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleanedText);
-      console.log("Generated questions:", cleanedText);
+      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
+      questionsArray = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse Gemini response:", rawText);
+      console.error("Failed to parse Gemini response:", raw);
       return res
         .status(500)
-        .json({ message: "Failed to parse AI response. The format was invalid." });
+        .json({ message: "Invalid AI response format" });
     }
 
     res.status(200).json({ questions: questionsArray });
@@ -197,6 +243,6 @@ export const generateQuestionsFromJD = async (req, res) => {
     console.error("Error in generateQuestionsFromJD:", error);
     res
       .status(500)
-      .json({ message: "Server error while generating detailed questions." });
+      .json({ message: "Server error while generating questions" });
   }
 };

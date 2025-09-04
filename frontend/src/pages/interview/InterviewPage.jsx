@@ -37,10 +37,9 @@ function InterviewPage() {
           return;
         }
 
-        // call your backend route
         const { data } = await axios.post(
           `${serverURL}/api/interviews/generate-questions`,
-          { jobRole: "Frontend Developer", difficulty: "medium" }, // or dynamic values
+          { jobRole: "Frontend Developer", difficulty: "medium" },
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -60,7 +59,7 @@ function InterviewPage() {
     fetchQuestions();
   }, [navigate]);
 
-  // --- CAMERA + RECORDING FUNCTIONS (unchanged) ---
+  // --- CAMERA + RECORDING FUNCTIONS ---
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -69,6 +68,7 @@ function InterviewPage() {
       });
       videoRef.current.srcObject = stream;
       setIsCameraOn(true);
+
       mediaRecorderRef.current = new MediaRecorder(stream);
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -118,18 +118,19 @@ function InterviewPage() {
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const token = userInfo ? userInfo.token : null;
+
       if (!token) {
         alert("Not logged in.");
         navigate("/login");
         return;
       }
 
+      // ✅ no manual Content-Type header (Axios will set correct boundary)
       const { data } = await axios.post(
         `${serverURL}/api/interviews/analyze`,
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         }
