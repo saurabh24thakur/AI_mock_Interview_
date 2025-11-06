@@ -1,54 +1,44 @@
 import fs from "fs";
 import Interview from "../models/Interview.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import pkg from '@google/genai';
+import InterviewSession from "../models/interviewSession.model.js";
+const { GoogleGenAI } = pkg;
 
 // ==================== GEMINI SETUP ====================
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 // ==================== SAVE INTERVIEW REPORT ====================
 export const saveInterview = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const {
-      fluencyScore,
-      confidenceScore,
-      correctnessScore,
-      bodyLanguageScore,
       jobRole,
-      difficulty,
+      answers,
+      overallScore,
+      finalFluencyScore,
+      finalConfidenceScore,
+      finalCorrectnessScore,
+      finalBodyLanguageScore,
+      status,
     } = req.body;
 
-    if (
-      !fluencyScore ||
-      !confidenceScore ||
-      !correctnessScore ||
-      !bodyLanguageScore ||
-      !jobRole
-    ) {
-      return res
-        .status(400)
-        .json({ message: "❌ Missing required score fields or job role" });
-    }
-
-    const interview = new Interview({
+    const session = await InterviewSession.create({
       user: userId,
-      fluencyScore,
-      confidenceScore,
-      correctnessScore,
-      bodyLanguageScore,
       jobRole,
-      difficulty,
+      answers,
+      overallScore,
+      finalFluencyScore,
+      finalConfidenceScore,
+      finalCorrectnessScore,
+      finalBodyLanguageScore,
+      status: status || "completed",
     });
 
-    await interview.save();
-    res
-      .status(201)
-      .json({ message: "✅ Interview saved successfully", interview });
-  } catch (err) {
-    console.error("Error in saveInterview:", err);
-    res.status(500).json({ message: "Server error while saving interview" });
+    res.status(201).json({ message: "Interview saved successfully", session });
+  } catch (error) {
+    console.error("Error saving interview:", error);
+    res.status(500).json({ message: "Failed to save interview" });
   }
 };
 
@@ -65,68 +55,74 @@ export const getUserInterviews = async (req, res) => {
   }
 };
 
+
 // ==================== TRANSCRIBE AUDIO ====================
 async function transcribeAudio(filePath) {
   const audioData = fs.readFileSync(filePath);
   const base64Audio = audioData.toString("base64");
 
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        mimeType: "audio/webm", // frontend MediaRecorder default
-        data: base64Audio,
+  const result = await genAI.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      {
+        inlineData: {
+          mimeType: "audio/webm", // frontend MediaRecorder default
+          data: base64Audio,
+        },
       },
-    },
-    { text: "Transcribe this audio into plain text only." },
-  ]);
+      { text: "Transcribe this audio into plain text only." },
+    ],
+  });
 
-  return result.response.text();
+  // ✅ Safely extract transcript text
+  const transcript =
+    result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    result?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    result?.text ||
+    "";
+
+  console.log("🎙️ Transcription Result:", transcript);
+
+  return transcript;
 }
 
-// ==================== GEMINI ANALYSIS ====================
-async function performGeminiAnalysis(transcript, questionText) {
+
+// ==================== ANALYZE TEXT ANSWER ====================
+async function performGeminiAnalysis(question, transcript) {
   const prompt = `
-    You are analyzing an interview answer.
+You are an AI interviewer. Evaluate the following answer.
 
-    Question: "${questionText}"
-    Candidate's Answer: "${transcript}"
+Question: ${question}
+Answer: ${transcript}
 
-    Rate the candidate on a scale of 1–10 for:
-    - Fluency (clarity, smoothness of speech)
-    - Confidence (tone, assertiveness)
-    - Correctness (how relevant & accurate the answer is)
+Provide:
+1. A brief evaluation (2-3 sentences)
+2. A score out of 10
+3. Suggested improvements
+`;
 
-    Also infer:
-    - Inner Tone: positive | neutral | negative
-    - Body Language: good | average | poor (estimate from pauses/hesitations)
+  const result = await genAI.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+  });
 
-    Output strictly as JSON:
-    {
-      "fluency": number,
-      "confidence": number,
-      "correctness": number,
-      "innerTone": "positive | neutral | negative",
-      "bodyLanguage": "good | average | poor"
-    }
-  `;
+  // ✅ Safely extract AI analysis text
+  const analysisText =
+    result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    result?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    result?.text ||
+    "";
 
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
+  console.log("🧠 Gemini Analysis Result:", analysisText);
 
-  try {
-    const cleaned = raw.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleaned);
-  } catch (err) {
-    console.error("Gemini response parse failed:", raw);
-    return {
-      fluency: 5,
-      confidence: 5,
-      correctness: 5,
-      innerTone: "neutral",
-      bodyLanguage: "average",
-    };
-  }
+  return analysisText;
 }
+
 
 // ==================== ANALYZE ANSWER ====================
 export const analyzeAnswer = async (req, res) => {
@@ -174,22 +170,31 @@ export const generateQuestions = async (req, res) => {
     const prompt = `
       Generate 5 interview questions for "${jobRole}" at "${difficulty}" level.
       Include technical, behavioral, and situational questions.
-
       Output ONLY JSON array of strings.
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // ✅ Generate with Gemini
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    // ✅ Safely extract text from multiple possible SDK response shapes
+    const raw =
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      result?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      result?.text ||
+      "undefined";
+
+    console.log("🔹 Gemini raw output (generateQuestions):", raw);
 
     let questionsArray;
     try {
-      const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
+      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
       questionsArray = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse Gemini response:", text);
-      return res
-        .status(500)
-        .json({ message: "Invalid AI response format" });
+      console.error("Failed to parse Gemini response:", raw);
+      return res.status(500).json({ message: "Invalid AI response format" });
     }
 
     res.status(200).json({ questions: questionsArray });
@@ -201,9 +206,12 @@ export const generateQuestions = async (req, res) => {
   }
 };
 
+
 // ==================== GENERATE QUESTIONS FROM JOB DESCRIPTION ====================
 export const generateQuestionsFromJD = async (req, res) => {
   try {
+    
+
     const { experience, description, expertise } = req.body;
 
     if (!experience || !description || !expertise) {
@@ -221,11 +229,23 @@ export const generateQuestionsFromJD = async (req, res) => {
       - Job Description: "${description}"
 
       Generate 7 diverse interview questions (technical, behavioral, situational).
-      Output ONLY JSON array of strings.
+      Output ONLY a JSON array of strings.
     `;
 
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text();
+    // Call Gemini
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    //  extract text
+    const raw =
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      result?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      result?.text ||
+      "undefined";
+
+    console.log("🔹 Gemini raw output (generateQuestionsFromJD):", raw);
 
     let questionsArray;
     try {
@@ -233,12 +253,10 @@ export const generateQuestionsFromJD = async (req, res) => {
       questionsArray = JSON.parse(cleaned);
     } catch (e) {
       console.error("Failed to parse Gemini response:", raw);
-      return res
-        .status(500)
-        .json({ message: "Invalid AI response format" });
+      return res.status(500).json({ message: "Invalid AI response format" });
     }
 
-    res.status(200).json({ questions: questionsArray });
+    return res.status(200).json({ questions: questionsArray });
   } catch (error) {
     console.error("Error in generateQuestionsFromJD:", error);
     res
@@ -246,3 +264,6 @@ export const generateQuestionsFromJD = async (req, res) => {
       .json({ message: "Server error while generating questions" });
   }
 };
+
+
+
