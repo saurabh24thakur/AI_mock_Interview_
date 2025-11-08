@@ -118,7 +118,7 @@ Provide:
     result?.text ||
     "";
 
-  console.log("🧠 Gemini Analysis Result:", analysisText);
+  console.log(" Gemini Analysis Result:", analysisText);
 
   return analysisText;
 }
@@ -173,13 +173,13 @@ export const generateQuestions = async (req, res) => {
       Output ONLY JSON array of strings.
     `;
 
-    // ✅ Generate with Gemini
+    //  Generate with Gemini
     const result = await genAI.models.generateContent({
       model: "gemini-2.0-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
-    // ✅ Safely extract text from multiple possible SDK response shapes
+    //  Safely extract text from multiple possible SDK response shapes
     const raw =
       result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
       result?.candidates?.[0]?.content?.parts?.[0]?.text ||
