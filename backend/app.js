@@ -14,9 +14,33 @@ connectDB();
 const app = express();
 
 // Middleware
-const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173"; // Fallback for local dev
+const allowedOrigins = [
+  'https://ai-mock-interview-frontend-2.pages.dev',
+  /^https:\/\/.*\.ai-mock-interview-frontend-2\.pages\.dev$/, // Matches any subdomain
+  'http://localhost:5173' // For local development
+];
+
 app.use(cors({
-  origin: frontendURL
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      }
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 app.use(express.json());
 
