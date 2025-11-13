@@ -1,9 +1,8 @@
 import fs from "fs";
 import Interview from "../models/Interview.js";
-import pkg from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import InterviewSession from "../models/interviewSession.model.js";
 import generateFeedback from "../utils/feedbackGenerator.js"; // Import the feedback generator
-const { GoogleGenAI } = pkg;
 
 // ==================== GEMINI SETUP ====================
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -274,6 +273,3 @@ export const generateQuestionsFromJD = async (req, res) => {
       .json({ message: "Server error while generating questions" });
   }
 };
-
-
-

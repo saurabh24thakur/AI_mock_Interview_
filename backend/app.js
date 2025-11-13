@@ -14,7 +14,9 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "https://ai-mock-interview-frontend-2.pages.dev/"
+}));
 app.use(express.json());
 
 // API Routes
