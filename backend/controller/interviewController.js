@@ -2,6 +2,7 @@ import fs from "fs";
 import Interview from "../models/Interview.js";
 import pkg from '@google/genai';
 import InterviewSession from "../models/interviewSession.model.js";
+import generateFeedback from "../utils/feedbackGenerator.js"; // Import the feedback generator
 const { GoogleGenAI } = pkg;
 
 // ==================== GEMINI SETUP ====================
@@ -23,6 +24,14 @@ export const saveInterview = async (req, res) => {
       status,
     } = req.body;
 
+    // Generate feedback based on scores
+    const feedback = generateFeedback({
+      fluency: finalFluencyScore,
+      confidence: finalConfidenceScore,
+      correctness: finalCorrectnessScore,
+      bodyLanguage: finalBodyLanguageScore,
+    });
+
     const session = await InterviewSession.create({
       user: userId,
       jobRole,
@@ -32,6 +41,7 @@ export const saveInterview = async (req, res) => {
       finalConfidenceScore,
       finalCorrectnessScore,
       finalBodyLanguageScore,
+      feedback, // Save the generated feedback
       status: status || "completed",
     });
 
@@ -45,7 +55,7 @@ export const saveInterview = async (req, res) => {
 // ==================== GET USER INTERVIEWS ====================
 export const getUserInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find({ user: req.user._id }).sort({
+    const interviews = await InterviewSession.find({ user: req.user._id }).sort({
       createdAt: -1,
     });
     res.json(interviews);
@@ -168,7 +178,7 @@ export const generateQuestions = async (req, res) => {
     }
 
     const prompt = `
-      Generate 5 interview questions for "${jobRole}" at "${difficulty}" level.
+      Generate 1 interview questions for "${jobRole}" at "${difficulty}" level.
       Include technical, behavioral, and situational questions.
       Output ONLY JSON array of strings.
     `;
@@ -228,7 +238,7 @@ export const generateQuestionsFromJD = async (req, res) => {
       - Expertise: ${expertise}
       - Job Description: "${description}"
 
-      Generate 7 diverse interview questions (technical, behavioral, situational).
+      Generate 1 diverse interview questions (technical, behavioral, situational).
       Output ONLY a JSON array of strings.
     `;
 

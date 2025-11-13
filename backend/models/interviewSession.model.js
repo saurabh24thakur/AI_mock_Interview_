@@ -25,6 +25,8 @@ const interviewSessionSchema = new mongoose.Schema(
     finalCorrectnessScore: { type: Number, default: 0 },
     finalBodyLanguageScore: { type: Number, default: 0 },
 
+    feedback: { type: String },
+
     status: { type: String, enum: ["in-progress", "completed"], default: "completed" },
   },
   { timestamps: true }

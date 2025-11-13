@@ -99,6 +99,7 @@ export const getDashboardData = async (req, res) => {
       confidence: s.finalConfidenceScore,
       correctness: s.finalCorrectnessScore,
       bodyLanguage: s.finalBodyLanguageScore,
+      feedback: s.feedback, // Add feedback field
       createdAt: s.createdAt,
     }));
 

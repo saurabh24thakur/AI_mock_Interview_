@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { serverURL } from "../../App";
 import { motion } from "framer-motion"; // 1. Import Motion
@@ -11,12 +11,14 @@ function InterviewPage() {
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const location = useLocation(); // Get location state
 
   // --- All your State and Refs (Unchanged) ---
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [fluency, setFluency] = useState("Waiting for your response...");
   const [correctness, setCorrectness] = useState("Waiting for your response...");
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(location.state?.questions || []);
+  const [jobRole, setJobRole] = useState(location.state?.jobRole || "General"); // Get jobRole from state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [completedQuestions, setCompletedQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
@@ -25,35 +27,43 @@ function InterviewPage() {
   const [statusText, setStatusText] = useState(
     "Click 'Submit Answer' to start recording."
   );
+  const [isInterviewComplete, setIsInterviewComplete] = useState(false);
   const navigate = useNavigate();
+
+  const handleFinishAndSave = async () => {
+    await saveInterviewToDB();
+    navigate("/dashboard");
+  };
 
   // --- All your functions (useEffect, startCamera, stopCamera, etc.) ---
   // --- are 100% unchanged. I've just collapsed them for brevity. ---
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const token = userInfo ? userInfo.token : null;
-        if (!token) {
-          navigate("/login");
-          return;
+    if (!location.state?.questions) {
+      const fetchQuestions = async () => {
+        try {
+          const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+          const token = userInfo ? userInfo.token : null;
+          if (!token) {
+            navigate("/login");
+            return;
+          }
+          const { data } = await axios.post(
+            `${serverURL}/api/interviews/generate-questions`,
+            { jobRole: jobRole, difficulty: "medium" }, // Use jobRole from state
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (data.questions && data.questions.length > 0) {
+            setQuestions(data.questions);
+          } else {
+            alert("No questions generated. Please try again.");
+          }
+        } catch (err) {
+          console.error("Error fetching questions:", err);
         }
-        const { data } = await axios.post(
-          `${serverURL}/api/interviews/generate-questions`,
-          { jobRole: "Frontend Developer", difficulty: "medium" },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (data.questions && data.questions.length > 0) {
-          setQuestions(data.questions);
-        } else {
-          alert("No questions generated. Please try again.");
-        }
-      } catch (err) {
-        console.error("Error fetching questions:", err);
-      }
-    };
-    fetchQuestions();
-  }, [navigate]);
+      };
+      fetchQuestions();
+    }
+  }, [navigate, jobRole, location.state?.questions]);
 
   const startCamera = async () => {
     try {
@@ -137,9 +147,8 @@ function InterviewPage() {
           setStatusText("Click 'Submit Answer' for next question.");
           return prevIndex + 1;
         } else {
-          setStatusText("Interview complete! 🎉");
-          alert("All questions answered!");
-          saveInterviewToDB();
+          setStatusText("Interview complete! 🎉 Click 'Finish & Save' to view your report.");
+          setIsInterviewComplete(true);
           return prevIndex;
         }
       });
@@ -163,7 +172,7 @@ function InterviewPage() {
       await axios.post(
         `${serverURL}/api/interviews/save`,
         {
-          jobRole: "Frontend Developer",
+          jobRole: jobRole, // Use jobRole from state
           answers,
           overallScore,
           finalFluencyScore: Math.round(
@@ -311,6 +320,12 @@ function InterviewPage() {
               <><FiMic /> Submit Answer</>
             )}
           </button>
+
+          {isInterviewComplete && (
+            <button onClick={handleFinishAndSave} className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+              Finish & Save
+            </button>
+          )}
         </motion.div>
       </div>
 

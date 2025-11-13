@@ -55,6 +55,7 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(initialDashboardData);
   const [loading, setLoading] = useState(true);
+  const [selectedInterview, setSelectedInterview] = useState(null); // To track the selected interview
   const navigate = useNavigate();
 
   // Data fetching logic (unchanged)
@@ -87,6 +88,15 @@ function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
     navigate("/login");
+  };
+
+  // --- Handlers for interview details ---
+  const handleInterviewClick = (interview) => {
+    setSelectedInterview(interview);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedInterview(null);
   };
 
   if (loading) {
@@ -251,7 +261,11 @@ function Dashboard() {
                 </thead>
                 <tbody>
                   {dashboardData.previousInterviews.map((interview) => (
-                    <tr key={interview.id} className="border-b border-gray-700 hover:bg-white/5 transition-colors">
+                    <tr 
+                      key={interview.id} 
+                      className="border-b border-gray-700 hover:bg-white/5 transition-colors cursor-pointer"
+                      onClick={() => handleInterviewClick(interview)}
+                    >
                       <td className="p-3 text-gray-400">{new Date(interview.createdAt).toLocaleDateString()}</td>
                       <td className="p-3 text-gray-400">{interview.jobRole}</td>
                       <td className="p-3 text-gray-400 capitalize">{interview.difficulty}</td>
@@ -267,6 +281,80 @@ function Dashboard() {
             </div>
           )}
         </motion.div>
+
+        {/* 10. INTERVIEW DETAILS MODAL */}
+        {selectedInterview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={handleCloseDetails}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+              className="bg-gray-900 border border-lime-400/30 rounded-2xl shadow-2xl w-full max-w-3xl p-8"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-lime-400">{selectedInterview.jobRole} Interview</h2>
+                  <p className="text-gray-400">{new Date(selectedInterview.createdAt).toLocaleString()}</p>
+                </div>
+                <button 
+                  onClick={handleCloseDetails} 
+                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Scores */}
+                <div className="bg-gray-800/50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold text-white mb-4">Performance Scores</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Overall Score</span>
+                      <span className="font-bold text-2xl text-lime-400">{selectedInterview.overallScore}%</span>
+                    </div>
+                    <hr className="border-gray-700"/>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Fluency</span>
+                      <span className="font-semibold text-white">{selectedInterview.fluency}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Confidence</span>
+                      <span className="font-semibold text-white">{selectedInterview.confidence}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Correctness</span>
+                      <span className="font-semibold text-white">{selectedInterview.correctness}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Body Language</span>
+                      <span className="font-semibold text-white">{selectedInterview.bodyLanguage}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feedback */}
+                <div className="bg-gray-800/50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold text-white mb-4">Valuable Feedback</h3>
+                  <div className="text-gray-300 space-y-4">
+                    {selectedInterview.feedback ? (
+                      <p>{selectedInterview.feedback}</p>
+                    ) : (
+                      <p>No specific feedback was provided for this interview.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </main>
     </div>
   );

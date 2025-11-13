@@ -52,7 +52,7 @@ function AddInterview({ onClose }) {
       if (data.questions && data.questions.length > 0) {
         alert("✅ Interview questions generated successfully!");
         onClose(); // close modal
-        navigate("/interview", { state: { questions: data.questions } });
+        navigate("/interview", { state: { questions: data.questions, jobRole: formData.expertise } });
       } else {
         throw new Error("No questions were generated.");
       }
