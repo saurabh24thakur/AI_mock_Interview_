@@ -14,8 +14,9 @@ connectDB();
 const app = express();
 
 // Middleware
+const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173"; // Fallback for local dev
 app.use(cors({
-  origin: "https://ai-mock-interview-frontend-2.pages.dev/"
+  origin: frontendURL
 }));
 app.use(express.json());
 
