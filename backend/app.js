@@ -5,8 +5,8 @@ import connectDB from "./config/db.js";
 
 // Routes
 import userRoutes from "./routes/userRoutes.js";
-import interviewRoutes from "./routes/interviewRoutes.js"; // future
-import dashboardRoutes from "./routes/dashboardRoutes.js"; // future
+import interviewRoutes from "./routes/interviewRoutes.js"; 
+import dashboardRoutes from "./routes/dashboardRoutes.js"; 
 
 dotenv.config();
 connectDB();
