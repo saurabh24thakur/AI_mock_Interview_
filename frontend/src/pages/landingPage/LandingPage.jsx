@@ -1,5 +1,7 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import AddInterview from '../../component/AddInterview';
+import { useNavigate } from 'react-router-dom';
 
 // --- Animation variants for the feature cards ---
 const cardVariants = {
@@ -16,6 +18,18 @@ const cardVariants = {
 };
 
 function LandingPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const isLoggedIn =
+    !!localStorage.getItem("token") || !!localStorage.getItem("user");
+
+  const handleStartInterviewClick = () => {
+    if (isLoggedIn) {
+      setIsModalOpen(true);
+    } else {
+      navigate("/signup");
+    }
+  };
   return (
 
     // 1. MAIN WRAPPER: Dark theme
@@ -82,6 +96,7 @@ function LandingPage() {
           </motion.p>
           
           <motion.button 
+            onClick={handleStartInterviewClick}
             className="
               bg-lime-400 text-black 
               px-8 py-3 rounded-full 
@@ -96,6 +111,8 @@ function LandingPage() {
             Start Interview
           </motion.button>
         </section>
+
+        {isModalOpen && <AddInterview onClose={() => setIsModalOpen(false)} />}
 
         {/* 5. "GLASS" FEATURES SECTION (Redesigned) */}
         <section className="py-24 px-6 md:px-10 text-center">

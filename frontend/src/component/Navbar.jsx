@@ -18,10 +18,6 @@ function Navbar() {
     navigate("/"); // redirect to home after logout
   };
 
-  // ✅ Your existing conditional logic (unchanged)
-  const showStartInterview =
-    location.pathname === "/" || location.pathname === "/dashboard";
-
   return (
     <>
       
@@ -93,7 +89,7 @@ function Navbar() {
             )}
 
             {/* Start Interview Button (The Lime Green One) */}
-            {isLoggedIn && showStartInterview && (
+            {isLoggedIn && (
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="
