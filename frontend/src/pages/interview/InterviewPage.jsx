@@ -189,7 +189,7 @@ function InterviewPage() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("✅ Interview saved successfully.");
+      console.log(" Interview saved successfully.");
     } catch (err) {
       console.error("Error saving interview:", err);
     }
@@ -261,11 +261,19 @@ function InterviewPage() {
           {/* AI Avatar */}
           <div className="relative bg-gray-900/70 backdrop-blur-lg border border-white/10 rounded-2xl p-4 w-72 h-72 flex flex-col items-center justify-center">
             <img
-              src="https://i.ibb.co/6mZ3Q9m/ai-avatar.png"
               alt="AI Interviewer"
-              className="w-32 h-32 rounded-full border-2 border-lime-400"
+              className="w-full h-full object-cover rounded-xl border-2 border-lime-400/50 shadow-[0_0_20px_rgba(163,230,53,0.3)]"
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src = "https://api.dicebear.com/9.x/bottts/svg?seed=MockMate";
+              }}
             />
-            <p className="mt-3 font-semibold text-white">AI Interviewer</p>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+              <p className="text-xs font-semibold text-lime-400 flex items-center gap-2">
+                <span className="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></span>
+                AI Interviewer
+              </p>
+            </div>
           </div>
         </motion.div>
 

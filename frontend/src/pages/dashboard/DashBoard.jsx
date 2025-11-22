@@ -10,6 +10,7 @@ import { motion } from "framer-motion"; // 1. Import Framer Motion
 import { // 2. Import icons
   FiGrid, FiBarChart2, FiPieChart, FiSettings, FiLogOut, FiList, FiCpu, FiAward 
 } from "react-icons/fi";
+import PracticeQuestions from "../../component/PracticeQuestions"; // Import PracticeQuestions
 
 // Initial data (unchanged)
 const initialDashboardData = {
@@ -56,6 +57,7 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState(initialDashboardData);
   const [loading, setLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState(null); // To track the selected interview
+  const [activeView, setActiveView] = useState("dashboard"); // State for active view
   const navigate = useNavigate();
 
   // Data fetching logic (unchanged)
@@ -110,6 +112,14 @@ function Dashboard() {
     );
   }
 
+  // Helper to determine if a view is active for styling
+  const getLinkClass = (viewName) => {
+    const baseClass = "flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer font-semibold";
+    const activeClass = "text-lime-400 bg-lime-400/10";
+    const inactiveClass = "hover:bg-white/5 text-gray-300";
+    return `${baseClass} ${activeView === viewName ? activeClass : inactiveClass}`;
+  };
+
   return (
     // 4. MAIN LAYOUT: Switched to dark theme
     <div className="flex min-h-screen bg-black text-gray-300">
@@ -121,16 +131,28 @@ function Dashboard() {
         </h2>
         <ul className="space-y-4 font-medium flex-1">
           {/* Sidebar links with icons */}
-          <li className="flex items-center gap-3 p-3 rounded-lg text-lime-400 bg-lime-400/10 font-semibold">
+          <li 
+            className={getLinkClass("dashboard")}
+            onClick={() => setActiveView("dashboard")}
+          >
             <FiGrid /> Dashboard
           </li>
-          <li className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+          <li 
+            className={getLinkClass("my-interviews")}
+            onClick={() => setActiveView("my-interviews")}
+          >
             <FiList /> My Interviews
           </li>
-          <li className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+          <li 
+            className={getLinkClass("practice")}
+            onClick={() => setActiveView("practice")}
+          >
             <FiCpu /> Practice Questions
           </li>
-          <li className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+          <li 
+            className={getLinkClass("performance")}
+            onClick={() => setActiveView("performance")}
+          >
             <FiAward /> Performance
           </li>
         </ul>
@@ -156,135 +178,250 @@ function Dashboard() {
           <p className="text-gray-400">Here is your performance summary.</p>
         </header>
 
-        {/* 7. METRICS: Redesigned as "glass" cards */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-gray-400">Interviews Taken</h3>
-            <p className="text-3xl font-bold text-white">{dashboardData.metrics.interviewsTaken}</p>
-          </motion.div>
-          <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-gray-400">Questions Answered</h3>
-            <p className="text-3xl font-bold text-white">{dashboardData.metrics.questionsAnswered}</p>
-          </motion.div>
-          <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-gray-400">Avg. Overall Score</h3>
-            <p className="text-3xl font-bold text-lime-400">{dashboardData.metrics.scoreAverage}%</p>
-          </motion.div>
-          <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-gray-400">Success Rate</h3>
-            <p className="text-3xl font-bold text-lime-400">{dashboardData.metrics.successRate}%</p>
-          </motion.div>
-        </motion.div>
+        {/* Render Content Based on Active View */}
+        
+        {/* DASHBOARD VIEW (Default) */}
+        {activeView === "dashboard" && (
+          <>
+            {/* 7. METRICS */}
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-gray-400">Interviews Taken</h3>
+                <p className="text-3xl font-bold text-white">{dashboardData.metrics.interviewsTaken}</p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-gray-400">Questions Answered</h3>
+                <p className="text-3xl font-bold text-white">{dashboardData.metrics.questionsAnswered}</p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-gray-400">Avg. Overall Score</h3>
+                <p className="text-3xl font-bold text-lime-400">{dashboardData.metrics.scoreAverage}%</p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-gray-400">Success Rate</h3>
+                <p className="text-3xl font-bold text-lime-400">{dashboardData.metrics.successRate}%</p>
+              </motion.div>
+            </motion.div>
 
-        {/* 8. CHARTS: Redesigned for dark mode */}
-        <motion.div 
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="lg:col-span-2 bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-lg font-semibold text-white mb-4">Performance by Job Role</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dashboardData.performanceData}>
-                <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
-                <XAxis dataKey="domain" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="score" fill="#a3e635" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
+            {/* 8. CHARTS */}
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div variants={itemVariants} className="lg:col-span-2 bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-4">Performance by Job Role</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={dashboardData.performanceData}>
+                    <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
+                    <XAxis dataKey="domain" stroke="#9ca3af" />
+                    <YAxis stroke="#9ca3af" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="score" fill="#a3e635" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </motion.div>
 
-          <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
-            <h3 className="text-lg font-semibold text-white mb-4">Average Score Breakdown</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={dashboardData.scoreBreakdown}>
-                <PolarGrid stroke="#4b5563" />
-                <PolarAngleAxis dataKey="subject" stroke="#9ca3af" />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
-                <Radar name="Score" dataKey="score" stroke="#a3e635" fill="#a3e635" fillOpacity={0.4} />
-                <Tooltip content={<CustomTooltip />} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </motion.div>
+              <motion.div variants={itemVariants} className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-4">Average Score Breakdown</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={dashboardData.scoreBreakdown}>
+                    <PolarGrid stroke="#4b5563" />
+                    <PolarAngleAxis dataKey="subject" stroke="#9ca3af" />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
+                    <Radar name="Score" dataKey="score" stroke="#a3e635" fill="#a3e635" fillOpacity={0.4} />
+                    <Tooltip content={<CustomTooltip />} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </motion.div>
+            </motion.div>
 
-        {/* Progress Over Time */}
-        <motion.div 
-          className="bg-gray-900/70 backdrop-blur-lg border border-white/10 mt-6 p-6 rounded-2xl shadow-lg"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h3 className="text-lg font-semibold text-white mb-4">Score Progress Over Time</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dashboardData.progressData}>
-              <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
-              <XAxis dataKey="month" stroke="#9ca3af" />
-              <YAxis domain={[0, 100]} stroke="#9ca3af" />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="avgScore" stroke="#a3e635" strokeWidth={3} />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
+            {/* Progress Over Time */}
+            <motion.div 
+              className="bg-gray-900/70 backdrop-blur-lg border border-white/10 mt-6 p-6 rounded-2xl shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h3 className="text-lg font-semibold text-white mb-4">Score Progress Over Time</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dashboardData.progressData}>
+                  <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
+                  <XAxis dataKey="month" stroke="#9ca3af" />
+                  <YAxis domain={[0, 100]} stroke="#9ca3af" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="avgScore" stroke="#a3e635" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </motion.div>
 
-        {/* 9. TABLE: Redesigned for dark mode */}
-        <motion.div 
-          className="bg-gray-900/70 backdrop-blur-lg border border-white/10 mt-6 p-6 rounded-2xl shadow-lg"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h3 className="text-lg font-semibold text-white mb-4">Previous Interviews</h3>
-          {dashboardData.previousInterviews.length === 0 ? (
-            <p className="text-gray-400">No previous interviews found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-gray-600">
-                    <th className="p-3 text-gray-300">Date</th>
-                    <th className="p-3 text-gray-300">Job Role</th>
-                    <th className="p-3 text-gray-300">Difficulty</th>
-                    <th className="p-3 text-gray-300">Overall Score</th>
-                    <th className="p-3 text-gray-300">Fluency</th>
-                    <th className="p-3 text-gray-300">Confidence</th>
-                    <th className="p-3 text-gray-300">Correctness</th>
-                    <th className="p-3 text-gray-300">Body Language</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardData.previousInterviews.map((interview) => (
-                    <tr 
-                      key={interview.id} 
-                      className="border-b border-gray-700 hover:bg-white/5 transition-colors cursor-pointer"
-                      onClick={() => handleInterviewClick(interview)}
-                    >
-                      <td className="p-3 text-gray-400">{new Date(interview.createdAt).toLocaleDateString()}</td>
-                      <td className="p-3 text-gray-400">{interview.jobRole}</td>
-                      <td className="p-3 text-gray-400 capitalize">{interview.difficulty}</td>
-                      <td className="p-3 font-semibold text-lime-400">{interview.overallScore}%</td>
-                      <td className="p-3 text-gray-400">{interview.fluency}</td>
-                      <td className="p-3 text-gray-400">{interview.confidence}</td>
-                      <td className="p-3 text-gray-400">{interview.correctness}</td>
-                      <td className="p-3 text-gray-400">{interview.bodyLanguage}</td>
+            {/* 9. TABLE */}
+            <motion.div 
+              className="bg-gray-900/70 backdrop-blur-lg border border-white/10 mt-6 p-6 rounded-2xl shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h3 className="text-lg font-semibold text-white mb-4">Recent Interviews</h3>
+              {dashboardData.previousInterviews.length === 0 ? (
+                <p className="text-gray-400">No previous interviews found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="p-3 text-gray-300">Date</th>
+                        <th className="p-3 text-gray-300">Job Role</th>
+                        <th className="p-3 text-gray-300">Difficulty</th>
+                        <th className="p-3 text-gray-300">Overall Score</th>
+                        <th className="p-3 text-gray-300">Fluency</th>
+                        <th className="p-3 text-gray-300">Confidence</th>
+                        <th className="p-3 text-gray-300">Correctness</th>
+                        <th className="p-3 text-gray-300">Body Language</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboardData.previousInterviews.slice(0, 5).map((interview) => (
+                        <tr 
+                          key={interview.id} 
+                          className="border-b border-gray-700 hover:bg-white/5 transition-colors cursor-pointer"
+                          onClick={() => handleInterviewClick(interview)}
+                        >
+                          <td className="p-3 text-gray-400">{new Date(interview.createdAt).toLocaleDateString()}</td>
+                          <td className="p-3 text-gray-400">{interview.jobRole}</td>
+                          <td className="p-3 text-gray-400 capitalize">{interview.difficulty}</td>
+                          <td className="p-3 font-semibold text-lime-400">{interview.overallScore}%</td>
+                          <td className="p-3 text-gray-400">{interview.fluency}</td>
+                          <td className="p-3 text-gray-400">{interview.confidence}</td>
+                          <td className="p-3 text-gray-400">{interview.correctness}</td>
+                          <td className="p-3 text-gray-400">{interview.bodyLanguage}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+
+        {/* MY INTERVIEWS VIEW */}
+        {activeView === "my-interviews" && (
+          <motion.div 
+            className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-2xl font-semibold text-white mb-6">My Interviews History</h3>
+            {dashboardData.previousInterviews.length === 0 ? (
+              <p className="text-gray-400">No previous interviews found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-600">
+                      <th className="p-3 text-gray-300">Date</th>
+                      <th className="p-3 text-gray-300">Job Role</th>
+                      <th className="p-3 text-gray-300">Difficulty</th>
+                      <th className="p-3 text-gray-300">Overall Score</th>
+                      <th className="p-3 text-gray-300">Fluency</th>
+                      <th className="p-3 text-gray-300">Confidence</th>
+                      <th className="p-3 text-gray-300">Correctness</th>
+                      <th className="p-3 text-gray-300">Body Language</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
+                  </thead>
+                  <tbody>
+                    {dashboardData.previousInterviews.map((interview) => (
+                      <tr 
+                        key={interview.id} 
+                        className="border-b border-gray-700 hover:bg-white/5 transition-colors cursor-pointer"
+                        onClick={() => handleInterviewClick(interview)}
+                      >
+                        <td className="p-3 text-gray-400">{new Date(interview.createdAt).toLocaleDateString()}</td>
+                        <td className="p-3 text-gray-400">{interview.jobRole}</td>
+                        <td className="p-3 text-gray-400 capitalize">{interview.difficulty}</td>
+                        <td className="p-3 font-semibold text-lime-400">{interview.overallScore}%</td>
+                        <td className="p-3 text-gray-400">{interview.fluency}</td>
+                        <td className="p-3 text-gray-400">{interview.confidence}</td>
+                        <td className="p-3 text-gray-400">{interview.correctness}</td>
+                        <td className="p-3 text-gray-400">{interview.bodyLanguage}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.div>
+        )}
 
-        {/* 10. INTERVIEW DETAILS MODAL */}
+        {/* PRACTICE QUESTIONS VIEW */}
+        {activeView === "practice" && (
+          <PracticeQuestions />
+        )}
+
+        {/* PERFORMANCE VIEW */}
+        {activeView === "performance" && (
+          <motion.div 
+            className="space-y-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-2xl font-semibold text-white">Performance Analysis</h3>
+            
+            {/* Reusing Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-4">Performance by Job Role</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={dashboardData.performanceData}>
+                    <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
+                    <XAxis dataKey="domain" stroke="#9ca3af" />
+                    <YAxis stroke="#9ca3af" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="score" fill="#a3e635" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-4">Average Score Breakdown</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={dashboardData.scoreBreakdown}>
+                    <PolarGrid stroke="#4b5563" />
+                    <PolarAngleAxis dataKey="subject" stroke="#9ca3af" />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
+                    <Radar name="Score" dataKey="score" stroke="#a3e635" fill="#a3e635" fillOpacity={0.4} />
+                    <Tooltip content={<CustomTooltip />} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg">
+              <h3 className="text-lg font-semibold text-white mb-4">Score Progress Over Time</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dashboardData.progressData}>
+                  <CartesianGrid stroke="#4b5563" strokeDasharray="3 3" />
+                  <XAxis dataKey="month" stroke="#9ca3af" />
+                  <YAxis domain={[0, 100]} stroke="#9ca3af" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="avgScore" stroke="#a3e635" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+        )}
+
+
+        {/* 10. INTERVIEW DETAILS MODAL (Unchanged) */}
         {selectedInterview && (
           <motion.div
             initial={{ opacity: 0 }}
