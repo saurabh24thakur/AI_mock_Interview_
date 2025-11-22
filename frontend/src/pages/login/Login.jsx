@@ -42,10 +42,11 @@ export default function Login() {
         `${serverURL}/api/users/login`,
         formData
       );
-      alert("✅ Login successful!");
+      alert(" Login successful!");
       console.log(res.data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
+      localStorage.setItem("userInfo", JSON.stringify(res.data));
       navigate("/dashboard");
     } catch (err) {
       alert("❌ Login failed: " + (err.response?.data?.message || err.message));

@@ -7,14 +7,15 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Your existing login logic (unchanged)
+  //  Your existing login logic (unchanged)
   const isLoggedIn =
-    !!localStorage.getItem("token") || !!localStorage.getItem("user");
+    !!localStorage.getItem("token") || !!localStorage.getItem("user") || !!localStorage.getItem("userInfo");
 
-  // ✅ Your existing logout function (unchanged)
+  //  Your existing logout function (unchanged)
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
     navigate("/"); // redirect to home after logout
   };
 
