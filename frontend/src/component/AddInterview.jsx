@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { serverURL } from "../App";
-import { motion } from "framer-motion"; // Import motion for animation
+import { motion } from "framer-motion";
 
 function AddInterview({ onClose }) {
   const [formData, setFormData] = useState({
@@ -13,7 +13,6 @@ function AddInterview({ onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Your existing functions (handleChange, handleSubmit) are unchanged
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -24,11 +23,9 @@ function AddInterview({ onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("🚀 Submit triggered with data:", formData);
     setIsLoading(true);
 
     try {
-      // Your existing API call logic
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       if (!userInfo) {
         alert("⚠️ You must be logged in first.");
@@ -51,7 +48,7 @@ function AddInterview({ onClose }) {
 
       if (data.questions && data.questions.length > 0) {
         alert("✅ Interview questions generated successfully!");
-        onClose(); // close modal
+        onClose();
         navigate("/interview", { state: { questions: data.questions, jobRole: formData.expertise } });
       } else {
         throw new Error("No questions were generated.");
@@ -69,7 +66,6 @@ function AddInterview({ onClose }) {
     }
   };
 
-  // Animation for the modal
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: { opacity: 1, scale: 1 },
@@ -77,42 +73,43 @@ function AddInterview({ onClose }) {
   };
 
   return (
-    // 1. MODAL OVERLAY: Darker with a slight blur
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm 
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm 
                  flex items-center justify-center z-50 p-4"
     >
-      {/* 2. "GLASS" MODAL BOX */}
       <motion.div
-        className="bg-gray-900/70 backdrop-blur-lg 
-                   border border-white/10 shadow-xl
-                   rounded-3xl w-full max-w-lg p-8 relative"
+        className="bg-black/80 backdrop-blur-xl 
+                   border border-white/10 shadow-[0_0_40px_rgba(255,255,255,0.1)]
+                   rounded-[2rem] w-full max-w-lg p-8 relative"
         variants={modalVariants}
         initial="hidden"
         animate="visible"
         exit="exit"
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        {/* 3. CLOSE BUTTON (Dark theme) */}
+        {/* CLOSE BUTTON */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        {/* 4. TITLE (Lime green accent) */}
-        <h2 className="text-3xl font-bold text-lime-400 mb-6">
+        {/* TITLE */}
+        <h2 className="text-3xl font-bold text-white mb-2">
           Add Interview
         </h2>
+        <p className="text-gray-400 text-sm mb-8">
+          Configure your interview settings below.
+        </p>
 
-        {/* 5. FORM (Dark theme) */}
+        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Job Experience */}
           <div>
-            <label className="block text-gray-300 font-medium mb-1">
+            <label className="block text-gray-300 font-medium mb-1 text-sm">
               Job Experience (in years)
             </label>
             <input
@@ -122,16 +119,16 @@ function AddInterview({ onClose }) {
               onChange={handleChange}
               placeholder="e.g. 3"
               required
-              className="w-full bg-white/5 border border-gray-600 rounded-lg 
+              className="w-full bg-white/5 border border-white/10 rounded-xl 
                          px-4 py-3 text-white
-                         placeholder:text-gray-500
-                         focus:ring-2 focus:ring-lime-400 focus:border-lime-400 focus:outline-none"
+                         placeholder:text-gray-600
+                         focus:ring-1 focus:ring-white/50 focus:border-white/50 focus:outline-none transition-all"
             />
           </div>
 
           {/* Job Description */}
           <div>
-            <label className="block text-gray-300 font-medium mb-1">
+            <label className="block text-gray-300 font-medium mb-1 text-sm">
               Job Description
             </label>
             <textarea
@@ -141,16 +138,16 @@ function AddInterview({ onClose }) {
               placeholder="Write a short job description..."
               rows="3"
               required
-              className="w-full bg-white/5 border border-gray-600 rounded-lg 
+              className="w-full bg-white/5 border border-white/10 rounded-xl 
                          px-4 py-3 text-white
-                         placeholder:text-gray-500
-                         focus:ring-2 focus:ring-lime-400 focus:border-lime-400 focus:outline-none"
+                         placeholder:text-gray-600
+                         focus:ring-1 focus:ring-white/50 focus:border-white/50 focus:outline-none transition-all"
             ></textarea>
           </div>
 
           {/* Expertise Details */}
           <div>
-            <label className="block text-gray-300 font-medium mb-1">
+            <label className="block text-gray-300 font-medium mb-1 text-sm">
               Expertise Details
             </label>
             <input
@@ -160,24 +157,24 @@ function AddInterview({ onClose }) {
               onChange={handleChange}
               placeholder="e.g. React, Node.js, System Design"
               required
-              className="w-full bg-white/5 border border-gray-600 rounded-lg 
+              className="w-full bg-white/5 border border-white/10 rounded-xl 
                          px-4 py-3 text-white
-                         placeholder:text-gray-500
-                         focus:ring-2 focus:ring-lime-400 focus:border-lime-400 focus:outline-none"
+                         placeholder:text-gray-600
+                         focus:ring-1 focus:ring-white/50 focus:border-white/50 focus:outline-none transition-all"
             />
           </div>
 
-          {/* 6. SUBMIT BUTTON (Lime green) */}
-          <div className="flex justify-end pt-2">
+          {/* SUBMIT BUTTON */}
+          <div className="flex justify-end pt-4">
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-lime-400 text-black font-semibold px-6 py-3 
-                         rounded-full shadow-lg 
-                         hover:bg-lime-300 transition-all 
-                         transform hover:scale-105
-                         disabled:bg-gray-600 disabled:text-gray-400 
-                         disabled:cursor-not-allowed disabled:transform-none"
+              className="bg-white text-black font-bold px-8 py-3 
+                         rounded-full shadow-[0_0_20px_rgba(255,255,255,0.2)]
+                         hover:bg-gray-200 transition-all 
+                         transform hover:scale-105 active:scale-95
+                         disabled:bg-gray-800 disabled:text-gray-500 
+                         disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
             >
               {isLoading ? "Generating..." : "Save Interview"}
             </button>

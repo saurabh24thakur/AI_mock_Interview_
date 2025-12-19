@@ -29,10 +29,10 @@ const itemVariants = {
 };
 
 function PracticeQuestions() {
-  const navigate = useNavigate();
+  const useNavigateHook = useNavigate();
 
   const handleStartPractice = (role) => {
-    navigate('/interview', { state: { jobRole: role } });
+    useNavigateHook('/interview', { state: { jobRole: role } });
   };
 
   return (
@@ -53,10 +53,10 @@ function PracticeQuestions() {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleStartPractice(topic.role)}
-            className="bg-white/5 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg cursor-pointer hover:border-lime-400/50 transition-colors group"
+            className="bg-white/5 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg cursor-pointer hover:border-white/30 transition-colors group"
           >
             <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 rounded-lg bg-lime-400/10 text-lime-400 text-2xl group-hover:bg-lime-400 group-hover:text-black transition-colors">
+              <div className="p-3 rounded-lg bg-white/10 text-white text-2xl group-hover:bg-white group-hover:text-black transition-colors">
                 {topic.icon}
               </div>
               <h3 className="text-xl font-semibold text-white">{topic.name}</h3>

@@ -1,50 +1,29 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom' // 1. Import Outlet
-import { motion } from 'framer-motion'   // 2. Import motion
+import { Outlet } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import DynamicBackground from './DynamicBackground'
 
 function AuthLayout() {
   return (
     // 1. MAIN WRAPPER: Dark theme & animated background
-    <div className="font-sans bg-black text-white min-h-screen overflow-hidden">
+    <div className="font-sans bg-black text-white min-h-screen overflow-hidden selection:bg-gray-500/30">
       
-      {/* 2. ANIMATED BACKGROUND (Same as LandingPage) */}
-      <div className="absolute top-0 left-0 w-full h-full z-0 opacity-50">
-        <div className="animated-aurora"></div>
-        <style jsx>{`
-          .animated-aurora {
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            background: linear-gradient(
-              -45deg,
-              #111214 30%,
-              #3b0764,
-              #111214 70%
-            );
-            background-size: 400% 400%;
-            animation: gradientFlow 15s ease infinite;
-          }
-
-          @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
+      {/* 2. DYNAMIC BACKGROUND (Noir Theme) */}
+      <div className="absolute inset-0 z-0">
+        <DynamicBackground />
+        <div className="absolute inset-0 bg-black/40" /> {/* Overlay for better contrast */}
       </div>
 
-      {/* 3. CONTENT WRAPPER
-        This 'relative' wrapper ensures content stays on top
-      */}
+      {/* 3. CONTENT WRAPPER */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
 
         {/* 4. "GLASS" PANEL to hold the form */}
         <motion.div
-          className="bg-gray-900/70 backdrop-blur-lg 
-                     border border-white/10 shadow-xl
-                     rounded-3xl w-full max-w-md p-8 md:p-10"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white/5 backdrop-blur-xl 
+                     border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]
+                     rounded-[2rem] w-full max-w-md p-8 md:p-10"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           {/* 5. This Outlet renders your Login/Signup component */}

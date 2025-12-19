@@ -200,7 +200,7 @@ function InterviewPage() {
       <div className="relative flex h-screen items-center justify-center overflow-hidden bg-black text-white">
         <DynamicBackground />
         <div className="z-10 flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-lime-400 border-t-transparent"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
           <h1 className="text-xl font-light tracking-wider text-gray-300">Initializing Interview Environment...</h1>
         </div>
       </div>
@@ -208,7 +208,7 @@ function InterviewPage() {
   }
 
   return (
-    <div className="relative flex h-screen w-full overflow-hidden bg-black text-white font-sans selection:bg-lime-500/30">
+    <div className="relative flex h-screen w-full overflow-hidden bg-black text-white font-sans selection:bg-gray-500/30">
       <DynamicBackground />
 
       {/* --- Main Content (Left side) --- */}
@@ -254,13 +254,13 @@ function InterviewPage() {
 
           {/* AI Avatar Card */}
           <div className="group relative flex h-64 w-full md:w-1/2 max-w-md flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl transition-all hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-b from-lime-500/5 to-transparent opacity-50"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50"></div>
             <div className="h-full w-full">
               <Avatar3D />
             </div>
             <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-md border border-white/5">
-               <FiCpu className="text-lime-400" />
-              <span className="text-xs font-medium text-lime-400">AI Interviewer</span>
+               <FiCpu className="text-white" />
+              <span className="text-xs font-medium text-white">AI Interviewer</span>
             </div>
           </div>
         </motion.div>
@@ -318,7 +318,7 @@ function InterviewPage() {
                   ? "bg-red-600 text-white shadow-red-600/30"
                   : !isCameraOn
                   ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                  : "bg-lime-400 text-black hover:bg-lime-300 shadow-lime-400/30"
+                  : "bg-white text-black hover:bg-gray-200 shadow-white/30"
               }
             `}
           >
@@ -346,7 +346,7 @@ function InterviewPage() {
       <div className="relative z-10 hidden w-1/4 flex-col border-l border-white/5 bg-black/20 backdrop-blur-2xl md:flex">
         <div className="p-6">
           <h2 className="mb-6 text-xl font-bold text-white flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-lime-400"></span>
+            <span className="h-2 w-2 rounded-full bg-white"></span>
             Live Analysis
           </h2>
           
@@ -374,7 +374,7 @@ function InterviewPage() {
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-start gap-3 rounded-lg p-2 text-sm text-gray-400 transition-colors hover:bg-white/5"
                 >
-                  <FiCheckCircle className="mt-0.5 min-w-[16px] text-lime-500/70" />
+                  <FiCheckCircle className="mt-0.5 min-w-[16px] text-white/70" />
                   <span className="line-through decoration-gray-600">{q}</span>
                 </motion.li>
               ))}

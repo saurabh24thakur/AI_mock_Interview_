@@ -8,7 +8,7 @@ import {
 import { serverURL } from "../../App";
 import { motion } from "framer-motion";
 import {
-  FiGrid, FiBarChart2, FiPieChart, FiSettings, FiLogOut, FiList, FiCpu, FiAward 
+  FiGrid, FiLogOut, FiList, FiCpu, FiAward 
 } from "react-icons/fi";
 import PracticeQuestions from "../../component/PracticeQuestions";
 import DynamicBackground from "../../component/DynamicBackground";
@@ -43,9 +43,9 @@ const itemVariants = {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-lg p-3 shadow-xl">
+      <div className="bg-black/90 backdrop-blur-md border border-white/10 rounded-lg p-3 shadow-xl">
         <p className="text-white font-semibold">{label}</p>
-        <p className="text-lime-400">{`${payload[0].name}: ${payload[0].value}`}</p>
+        <p className="text-gray-300">{`${payload[0].name}: ${payload[0].value}`}</p>
       </div>
     );
   }
@@ -107,7 +107,7 @@ function Dashboard() {
       <div className="relative flex justify-center items-center min-h-screen bg-black text-white overflow-hidden">
         <DynamicBackground />
         <div className="z-10 flex flex-col items-center gap-4">
-           <div className="h-12 w-12 animate-spin rounded-full border-4 border-lime-400 border-t-transparent"></div>
+           <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
            <p className="text-gray-300 font-light tracking-wider">Loading Dashboard...</p>
         </div>
       </div>
@@ -116,21 +116,19 @@ function Dashboard() {
 
   const getLinkClass = (viewName) => {
     const baseClass = "flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer font-medium";
-    const activeClass = "text-black bg-lime-400 shadow-[0_0_15px_rgba(163,230,53,0.4)]";
+    const activeClass = "text-black bg-white shadow-[0_0_15px_rgba(255,255,255,0.4)]";
     const inactiveClass = "hover:bg-white/10 text-gray-400 hover:text-white";
     return `${baseClass} ${activeView === viewName ? activeClass : inactiveClass}`;
   };
 
   return (
-    <div className="relative flex min-h-screen bg-black text-gray-300 overflow-hidden font-sans selection:bg-lime-500/30">
+    <div className="relative flex min-h-screen bg-black text-gray-300 overflow-hidden font-sans selection:bg-gray-500/30">
       <DynamicBackground />
       
       {/* SIDEBAR */}
-      <aside className="relative z-10 w-72 bg-black/20 backdrop-blur-2xl border-r border-white/5 p-8 flex-col hidden md:flex">
+      <aside className="relative z-10 w-72 bg-black/20 backdrop-blur-2xl border-r border-white/5 px-8 pb-8 pt-32 flex-col hidden md:flex">
         <div className="mb-10 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-lime-400 flex items-center justify-center">
-            <FiCpu className="text-black text-xl" />
-          </div>
+          
           <h2 className="text-2xl font-bold text-white tracking-tight">
             MockMate
           </h2>
@@ -153,7 +151,7 @@ function Dashboard() {
 
         <div className="mt-auto pt-6 border-t border-white/10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center text-black font-bold text-lg">
+            <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-lg border border-white/20">
               {user?.name?.charAt(0) || "U"}
             </div>
             <div>
@@ -172,11 +170,11 @@ function Dashboard() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="relative z-10 flex-1 p-8 overflow-y-auto h-screen scrollbar-hide">
+      <main className="relative z-10 flex-1 px-8 pb-8 pt-32 overflow-y-auto h-screen scrollbar-hide">
         <header className="mb-10 flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-green-400">{user?.name}!</span>
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">{user?.name}!</span>
             </h1>
             <p className="text-gray-500 mt-2">Here's your interview performance summary.</p>
           </div>
@@ -198,8 +196,8 @@ function Dashboard() {
               {[
                 { title: "Interviews Taken", value: dashboardData.metrics.interviewsTaken, color: "text-white" },
                 { title: "Questions Answered", value: dashboardData.metrics.questionsAnswered, color: "text-white" },
-                { title: "Avg. Score", value: `${dashboardData.metrics.scoreAverage}%`, color: "text-lime-400" },
-                { title: "Success Rate", value: `${dashboardData.metrics.successRate}%`, color: "text-lime-400" },
+                { title: "Avg. Score", value: `${dashboardData.metrics.scoreAverage}%`, color: "text-white" },
+                { title: "Success Rate", value: `${dashboardData.metrics.successRate}%`, color: "text-white" },
               ].map((item, index) => (
                 <motion.div key={index} variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-lg hover:bg-white/10 transition-colors">
                   <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">{item.title}</h3>
@@ -223,7 +221,7 @@ function Dashboard() {
                     <XAxis dataKey="domain" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <YAxis stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                    <Bar dataKey="score" fill="#a3e635" radius={[4, 4, 0, 0]} barSize={40} />
+                    <Bar dataKey="score" fill="#ffffff" radius={[4, 4, 0, 0]} barSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </motion.div>
@@ -235,7 +233,7 @@ function Dashboard() {
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis dataKey="subject" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
-                    <Radar name="Score" dataKey="score" stroke="#a3e635" strokeWidth={2} fill="#a3e635" fillOpacity={0.3} />
+                    <Radar name="Score" dataKey="score" stroke="#ffffff" strokeWidth={2} fill="#ffffff" fillOpacity={0.3} />
                     <Tooltip content={<CustomTooltip />} />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -257,7 +255,7 @@ function Dashboard() {
                   <XAxis dataKey="month" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="avgScore" stroke="#a3e635" strokeWidth={3} dot={{r: 4, fill: '#a3e635'}} activeDot={{r: 6, strokeWidth: 0}} />
+                  <Line type="monotone" dataKey="avgScore" stroke="#ffffff" strokeWidth={3} dot={{r: 4, fill: '#ffffff'}} activeDot={{r: 6, strokeWidth: 0}} />
                 </LineChart>
               </ResponsiveContainer>
             </motion.div>
@@ -300,7 +298,7 @@ function Dashboard() {
                               {interview.difficulty}
                             </span>
                           </td>
-                          <td className="p-4 font-bold text-lime-400">{interview.overallScore}%</td>
+                          <td className="p-4 font-bold text-white">{interview.overallScore}%</td>
                           <td className="p-4">{interview.fluency}</td>
                           <td className="p-4">{interview.confidence}</td>
                         </tr>
@@ -345,10 +343,10 @@ function Dashboard() {
                         <td className="p-4">{new Date(interview.createdAt).toLocaleDateString()}</td>
                         <td className="p-4 font-medium text-white">{interview.jobRole}</td>
                         <td className="p-4 capitalize">{interview.difficulty}</td>
-                        <td className="p-4 font-bold text-lime-400">{interview.overallScore}%</td>
+                        <td className="p-4 font-bold text-white">{interview.overallScore}%</td>
                         <td className="p-4">
-                          <span className="text-green-400 flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-400"></span> Completed
+                          <span className="text-gray-400 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white"></span> Completed
                           </span>
                         </td>
                       </tr>
@@ -383,7 +381,7 @@ function Dashboard() {
                     <XAxis dataKey="domain" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <YAxis stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                    <Bar dataKey="score" fill="#a3e635" radius={[4, 4, 0, 0]} barSize={40} />
+                    <Bar dataKey="score" fill="#ffffff" radius={[4, 4, 0, 0]} barSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -395,7 +393,7 @@ function Dashboard() {
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis dataKey="subject" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="none" />
-                    <Radar name="Score" dataKey="score" stroke="#a3e635" strokeWidth={2} fill="#a3e635" fillOpacity={0.3} />
+                    <Radar name="Score" dataKey="score" stroke="#ffffff" strokeWidth={2} fill="#ffffff" fillOpacity={0.3} />
                     <Tooltip content={<CustomTooltip />} />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -410,7 +408,7 @@ function Dashboard() {
                   <XAxis dataKey="month" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="avgScore" stroke="#a3e635" strokeWidth={3} dot={{r: 4, fill: '#a3e635'}} activeDot={{r: 6, strokeWidth: 0}} />
+                  <Line type="monotone" dataKey="avgScore" stroke="#ffffff" strokeWidth={3} dot={{r: 4, fill: '#ffffff'}} activeDot={{r: 6, strokeWidth: 0}} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -431,10 +429,10 @@ function Dashboard() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-              className="bg-[#111] border border-white/10 rounded-3xl shadow-2xl w-full max-w-3xl p-8 relative overflow-hidden"
+              className="bg-black border border-white/10 rounded-3xl shadow-2xl w-full max-w-3xl p-8 relative overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lime-400 to-green-600"></div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-white to-gray-500"></div>
               
               <div className="flex justify-between items-start mb-8">
                 <div>
@@ -453,12 +451,12 @@ function Dashboard() {
                 {/* Scores */}
                 <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <FiAward className="text-lime-400" /> Performance Scores
+                    <FiAward className="text-white" /> Performance Scores
                   </h3>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
                       <span className="text-gray-300">Overall Score</span>
-                      <span className="font-bold text-2xl text-lime-400">{selectedInterview.overallScore}%</span>
+                      <span className="font-bold text-2xl text-white">{selectedInterview.overallScore}%</span>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
@@ -466,7 +464,7 @@ function Dashboard() {
                         <span className="font-medium text-white">{selectedInterview.fluency}</span>
                       </div>
                       <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                         <div className="bg-lime-400 h-full rounded-full" style={{ width: '75%' }}></div>
+                         <div className="bg-white h-full rounded-full" style={{ width: '75%' }}></div>
                       </div>
                     </div>
                      <div className="space-y-2">
@@ -475,7 +473,7 @@ function Dashboard() {
                         <span className="font-medium text-white">{selectedInterview.confidence}</span>
                       </div>
                       <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                         <div className="bg-lime-400 h-full rounded-full" style={{ width: '80%' }}></div>
+                         <div className="bg-white h-full rounded-full" style={{ width: '80%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -484,7 +482,7 @@ function Dashboard() {
                 {/* Feedback */}
                 <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <FiList className="text-lime-400" /> Feedback
+                    <FiList className="text-white" /> Feedback
                   </h3>
                   <div className="text-gray-300 text-sm leading-relaxed h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                     {selectedInterview.feedback ? (

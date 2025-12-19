@@ -12,6 +12,7 @@ import InterviewPage from './pages/interview/InterviewPage';
 export const serverURL="https://ai-nterview-backend.onrender.com";
 
 import InterviewSetup from "./pages/InterviewSetup/InterviewSetup"; 
+import AuthLayout from './component/AuthLayout';
 function Layout() {
   return (
     <>
@@ -25,10 +26,15 @@ function App() {
   return (
     <Routes>
       {/* Wrap all routes inside Layout */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<LandingPage />} />
+      {/* Auth Routes - Wrapped in AuthLayout */}
+      <Route element={<AuthLayout />}>
         <Route path="signup" element={<Signup />} />
         <Route path="login" element={<Login />} />
+      </Route>
+
+      {/* Main App Routes - Wrapped in Layout (with Navbar) */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<LandingPage />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="interview" element={<InterviewPage />} />
         <Route path="interview-setup" element={<InterviewSetup />} />
