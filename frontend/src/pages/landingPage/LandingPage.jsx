@@ -2,19 +2,25 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AddInterview from '../../component/AddInterview';
 import { useNavigate } from 'react-router-dom';
+import DynamicBackground from '../../component/DynamicBackground';
+import { FiCpu, FiBarChart2, FiShoppingCart, FiArrowRight } from 'react-icons/fi';
 
-// --- Animation variants for the feature cards ---
-const cardVariants = {
+// --- Animation variants ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2 }
+  }
+};
+
+const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: (i) => ({ // 'i' is the custom index for staggered delay
+  visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.5,
-      delay: i * 0.15,
-      ease: "easeOut",
-    },
-  }),
+    transition: { type: "spring", stiffness: 50, damping: 20 }
+  }
 };
 
 function LandingPage() {
@@ -30,184 +36,159 @@ function LandingPage() {
       navigate("/signup");
     }
   };
+
   return (
+    <div className="relative font-sans bg-black text-white min-h-screen overflow-x-hidden selection:bg-gray-500/30">
+      <DynamicBackground />
 
-    // 1. MAIN WRAPPER: Dark theme
-    <div className="font-sans bg-black text-white min-h-screen overflow-x-hidden">
- 
-      
-      {/* 2. ANIMATED BACKGROUND (Like the image)
-        This is the "aurora" effect, animated.
-      */}
-      <div className="absolute top-0 left-0 w-full h-full z-0 opacity-50">
-        <div className="animated-aurora"></div>
-        {/* We use <style jsx> here to keep the CSS with its component.
-            You can also move this to your global index.css file.
-        */}
-        <style jsx>{`
-          .animated-aurora {
-            width: 100%;
-            height: 100%;
-            position: fixed; /* Ensures it covers the full viewport height */
-            background: linear-gradient(
-              -45deg,
-              #111214 30%,
-              #3b0764,
-              #111214 70%
-            );
-            background-size: 400% 400%;
-            animation: gradientFlow 15s ease infinite;
-          }
-
-          @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
-      </div>
-
-      {/* 3. CONTENT WRAPPER
-        This 'relative' wrapper ensures content stays on top
-      */}
+      {/* CONTENT WRAPPER */}
       <div className="relative z-10">
 
-        {/* 4. NEW HERO SECTION (Centered, high-impact) */}
-        <section className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+        {/* HERO SECTION */}
+        <section className="flex flex-col items-center justify-center min-h-screen text-center px-6 pt-20">
           
-          <motion.h1 
-            className="text-5xl md:text-7xl font-bold mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="mb-8 relative"
           >
-            {/* Split-color text, like the image */}
-            <span className="text-lime-400">Ace Your Interview</span> <br />
-            More Presentable
+            <div className="absolute -inset-1 rounded-full bg-white/10 opacity-30 blur-xl animate-pulse"></div>
+            <span className="relative px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-300 text-sm font-medium uppercase tracking-wider">
+              AI-Powered Interview Prep
+            </span>
+          </motion.div>
+
+          <motion.h1 
+            className="text-5xl md:text-8xl font-bold mb-8 tracking-tight leading-tight text-white"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+          >
+            Master Your Next <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500">
+              Big Opportunity
+            </span>
           </motion.h1>
           
           <motion.p 
-            className="text-lg text-gray-300 max-w-xl mb-8"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-lg md:text-xl text-gray-400 max-w-2xl mb-12 leading-relaxed"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           >
-            Ace your first interview using Mockmate...
+            Practice with our advanced AI interviewer, get real-time feedback on your fluency and body language, and land your dream job with confidence.
           </motion.p>
           
-          <motion.button 
-            onClick={handleStartInterviewClick}
-            className="
-              bg-lime-400 text-black 
-              px-8 py-3 rounded-full 
-              font-semibold shadow-lg 
-              hover:bg-lime-300 
-              transition-all duration-200 
-              transform hover:scale-105"
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+            className="flex flex-col sm:flex-row gap-4"
           >
-            Start Interview
-          </motion.button>
+            <button 
+              onClick={handleStartInterviewClick}
+              className="group relative px-8 py-4 bg-white text-black rounded-full font-bold text-lg shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:bg-gray-100 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+            >
+              Start Practice Now <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-all transform hover:scale-105 active:scale-95 backdrop-blur-md"
+            >
+              View Dashboard
+            </button>
+          </motion.div>
         </section>
 
         {isModalOpen && <AddInterview onClose={() => setIsModalOpen(false)} />}
 
-        {/* 5. "GLASS" FEATURES SECTION (Redesigned) */}
-        <section className="py-24 px-6 md:px-10 text-center">
-          <motion.h2 
-            className="text-4xl font-semibold mb-3"
+        {/* FEATURES SECTION */}
+        <section className="py-32 px-6 md:px-10">
+          <motion.div 
+            className="text-center mb-20"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            Imagine Features
-          </motion.h2>
-          <motion.p 
-            className="text-gray-300 mb-12 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            Everything you need to ace your interview, all in one place.
-          </motion.p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
+              Everything You Need to <span className="text-gray-400">Succeed</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+              Our platform provides comprehensive tools to help you prepare for technical and behavioral interviews.
+            </p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+          >
             
-            {/* Box 1 (Glass Card with Hover Effect) */}
+            {/* Feature 1 */}
             <motion.div 
-              className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl 
-                         border border-white/10 shadow-lg
-                         transition-colors duration-300
-                         hover:border-lime-400/50"
-              custom={0} // Stagger index
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
-              variants={cardVariants}
-              whileHover={{ scale: 1.05, y: -8 }} // Hover Effect
+              variants={itemVariants}
+              className="group bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 hover:border-white/30 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5"
             >
-              <div className="bg-lime-400/10 text-lime-400 w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">
-                ⟳
+              <div className="bg-white/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/20">
+                <FiCpu className="text-white text-3xl" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI Interview System</h3>
-              <p className="text-gray-400 text-sm">
-                It give u oppotunnity to test you in frony of Ai to ace your intervew..
+              <h3 className="text-2xl font-bold mb-4 text-white">AI Interviewer</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Experience realistic interview scenarios with our advanced AI. Get tested on technical knowledge and behavioral responses in real-time.
               </p>
             </motion.div>
 
-            {/* Box 2 (Glass Card with Hover Effect) */}
+            {/* Feature 2 */}
             <motion.div 
-              className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl 
-                         border border-white/10 shadow-lg
-                         transition-colors duration-300
-                         hover:border-lime-400/50"
-              custom={1} // Stagger index
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
-              variants={cardVariants}
-              whileHover={{ scale: 1.05, y: -8 }} // Hover Effect
+              variants={itemVariants}
+              className="group bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 hover:border-white/30 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5"
             >
-              <div className="bg-lime-400/10 text-lime-400 w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">
-                📊
+              <div className="bg-white/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/20">
+                <FiBarChart2 className="text-white text-3xl" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Full functional dashboard</h3>
-              <p className="text-gray-400 text-sm">
-                You can tally all your progress and old interview sessions..
+              <h3 className="text-2xl font-bold mb-4 text-white">Performance Analytics</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Track your progress with detailed analytics. Visualize your improvement in fluency, correctness, and confidence over time.
               </p>
             </motion.div>
 
-            {/* Box 3 (Glass Card with Hover Effect) */}
+            {/* Feature 3 */}
             <motion.div 
-              className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl 
-                         border border-white/10 shadow-lg
-                         transition-colors duration-300
-                         hover:border-lime-400/50"
-              custom={2} // Stagger index
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
-              variants={cardVariants}
-              whileHover={{ scale: 1.05, y: -8 }} // Hover Effect
+              variants={itemVariants}
+              className="group bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 hover:border-white/30 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5"
             >
-              <div className="bg-lime-400/10 text-lime-400 w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">
-                🛒
+              <div className="bg-white/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/20">
+                <FiShoppingCart className="text-white text-3xl" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Easy Purchase</h3>
-              <p className="text-gray-400 text-sm">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Perferendis quis molestiae vitae eligendi at.
+              <h3 className="text-2xl font-bold mb-4 text-white">Premium Plans</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Unlock unlimited interviews, advanced question sets, and priority support with our affordable premium plans.
               </p>
             </motion.div>
 
-          </div>
+          </motion.div>
         </section>
 
-        {/* Your Footer component would go here */}
+        {/* FOOTER */}
+        <footer className="border-t border-white/10 bg-black/40 backdrop-blur-md py-12">
+          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-2xl font-bold text-white tracking-tight">
+              Mock<span className="text-gray-400">Mate</span>
+            </div>
+            <p className="text-gray-500 text-sm">
+              © {new Date().getFullYear()} MockMate AI. All rights reserved.
+            </p>
+            <div className="flex gap-6 text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="#" className="hover:text-white transition-colors">Contact</a>
+            </div>
+          </div>
+        </footer>
 
       </div>
     </div>

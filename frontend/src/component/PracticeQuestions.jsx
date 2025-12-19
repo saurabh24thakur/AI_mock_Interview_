@@ -53,7 +53,7 @@ function PracticeQuestions() {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleStartPractice(topic.role)}
-            className="bg-gray-900/70 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg cursor-pointer hover:border-lime-400/50 transition-colors group"
+            className="bg-white/5 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-lg cursor-pointer hover:border-lime-400/50 transition-colors group"
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 rounded-lg bg-lime-400/10 text-lime-400 text-2xl group-hover:bg-lime-400 group-hover:text-black transition-colors">
