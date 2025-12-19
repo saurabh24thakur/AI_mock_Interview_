@@ -81,10 +81,10 @@ function LandingPage() {
         <section className="flex-grow flex flex-col items-center justify-center text-center px-6 py-20 relative z-10">
           
           {/* Floating Nodes */}
-          <FloatingNode label="Cortex" value="20.945" x="20%" y="20%" delay={0.5} />
-          <FloatingNode label="Quant" value="2.945" x="80%" y="25%" delay={0.7} />
-          <FloatingNode label="Aelf" value="19.346" x="15%" y="60%" delay={0.9} />
-          <FloatingNode label="Meeton" value="440" x="85%" y="55%" delay={1.1} />
+          <FloatingNode label="Mock AI" value="Active" x="20%" y="20%" delay={0.5} />
+          <FloatingNode label="Analysis" value="Deep" x="80%" y="25%" delay={0.7} />
+          <FloatingNode label="Feedback" value="Real-time" x="15%" y="60%" delay={0.9} />
+          <FloatingNode label="Practice" value="Unlimited" x="85%" y="55%" delay={1.1} />
 
           {/* Top Pill */}
           <motion.div
@@ -309,16 +309,16 @@ function LandingPage() {
 
           {/* Bottom Tags (Floating Pills) */}
           <div className="mt-20 flex flex-wrap justify-center gap-4 md:gap-8">
-             {['2.7k Questions', 'Success', 'Decentralized Learning', 'Smart Contracts', 'Tokenized Trust', 'AI Revolution'].map((tag, i) => (
+             {['2.7k Questions', 'Success', 'Personalized Learning', 'Smart Feedback', 'Career Growth', 'AI Revolution'].map((tag, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.8 + (i * 0.1) }}
-                  className={`px-6 py-2 rounded-full border border-white/10 text-sm font-medium flex items-center gap-2 ${tag === 'Decentralized Learning' ? 'bg-white text-black' : 'bg-white/5 text-gray-400'}`}
+                  className={`px-6 py-2 rounded-full border border-white/10 text-sm font-medium flex items-center gap-2 ${tag === 'Personalized Learning' ? 'bg-white text-black' : 'bg-white/5 text-gray-400'}`}
                 >
-                   {tag === 'Decentralized Learning' && <span className="text-lg">✦</span>}
+                   {tag === 'Personalized Learning' && <span className="text-lg">✦</span>}
                    {tag}
                 </motion.div>
              ))}
