@@ -7,6 +7,24 @@ import generateFeedback from "../utils/feedbackGenerator.js"; // Import the feed
 // ==================== GEMINI SETUP ====================
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// Helper: Retry mechanism for 429 Rate Limits
+async function generateWithRetry(params, retries = 3) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await genAI.models.generateContent(params);
+    } catch (error) {
+      // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
+      if ((error.status === 429 || error.code === 429 || error.status === 503) && i < retries) {
+        const delay = 15000 * (i + 1); // Wait 15s, 30s, 45s
+        console.warn(`⚠️ Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
 
 // ==================== SAVE INTERVIEW REPORT ====================
 export const saveInterview = async (req, res) => {
@@ -70,8 +88,8 @@ async function transcribeAudio(filePath) {
   const audioData = fs.readFileSync(filePath);
   const base64Audio = audioData.toString("base64");
 
-  const result = await genAI.models.generateContent({
-    model: "gemini-2.0-flash",
+  const result = await generateWithRetry({
+    model: "gemini-2.5-flash",
     contents: [
       {
         inlineData: {
@@ -99,19 +117,22 @@ async function transcribeAudio(filePath) {
 // ==================== ANALYZE TEXT ANSWER ====================
 async function performGeminiAnalysis(question, transcript) {
   const prompt = `
-You are an AI interviewer. Evaluate the following answer.
+    You are an AI interviewer. Evaluate the following answer.
+    
+    Question: ${question}
+    Answer: ${transcript}
+    
+    Provide the output in the following JSON format ONLY:
+    {
+      "fluency": "Brief evaluation of fluency (2-3 sentences)",
+      "correctness": "Brief evaluation of correctness (2-3 sentences)",
+      "fluencyScore": <number 0-100>,
+      "correctnessScore": <number 0-100>
+    }
+  `;
 
-Question: ${question}
-Answer: ${transcript}
-
-Provide:
-1. A brief evaluation (2-3 sentences)
-2. A score out of 10
-3. Suggested improvements
-`;
-
-  const result = await genAI.models.generateContent({
-    model: "gemini-2.0-flash",
+  const result = await generateWithRetry({
+    model: "gemini-2.5-flash",
     contents: [
       {
         role: "user",
@@ -121,15 +142,26 @@ Provide:
   });
 
   // ✅ Safely extract AI analysis text
-  const analysisText =
+  const rawText =
     result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
     result?.candidates?.[0]?.content?.parts?.[0]?.text ||
     result?.text ||
-    "";
+    "{}";
 
-  console.log(" Gemini Analysis Result:", analysisText);
+  console.log(" Gemini Analysis Result:", rawText);
 
-  return analysisText;
+  try {
+    const cleaned = rawText.replace(/```json\n?|\n?```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error("Failed to parse analysis JSON:", e);
+    return {
+      fluency: "Could not analyze fluency.",
+      correctness: "Could not analyze correctness.",
+      fluencyScore: 50,
+      correctnessScore: 50
+    };
+  }
 }
 
 
@@ -183,8 +215,8 @@ export const generateQuestions = async (req, res) => {
     `;
 
     //  Generate with Gemini
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
+    const result = await generateWithRetry({
+      model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
@@ -242,8 +274,8 @@ export const generateQuestionsFromJD = async (req, res) => {
     `;
 
     // Call Gemini
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
+    const result = await generateWithRetry({
+      model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
@@ -268,6 +300,8 @@ export const generateQuestionsFromJD = async (req, res) => {
     return res.status(200).json({ questions: questionsArray });
   } catch (error) {
     console.error("Error in generateQuestionsFromJD:", error);
+    console.error("Full Error Details:", JSON.stringify(error, null, 2));
+    console.error("Full Error Details:", JSON.stringify(error, null, 2));
     res
       .status(500)
       .json({ message: "Server error while generating questions" });

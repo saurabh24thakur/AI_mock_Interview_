@@ -7,7 +7,7 @@ import {
   FiVideo, FiVideoOff, FiMic, FiStopCircle, FiCheckCircle, FiCpu, FiUser
 } from "react-icons/fi";
 import DynamicBackground from "../../component/DynamicBackground";
-import Avatar3D from "../../component/Avatar3D";
+
 
 function InterviewPage() {
   const videoRef = useRef(null);
@@ -212,7 +212,7 @@ function InterviewPage() {
       <DynamicBackground />
 
       {/* --- Main Content (Left side) --- */}
-      <div className="relative z-10 flex w-full flex-col items-center justify-center p-4 md:w-3/4 md:p-8">
+      <div className="relative z-10 flex w-full flex-col items-center justify-start p-4 pt-28 md:w-3/4 md:p-8 md:pt-32 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -227,19 +227,19 @@ function InterviewPage() {
         </motion.div>
 
         <motion.div
-          className="flex flex-col md:flex-row gap-8 items-center justify-center w-full max-w-5xl"
+          className="flex flex-col items-center justify-center w-full max-w-5xl"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* User Video Card */}
-          <div className="group relative flex h-64 w-full md:w-1/2 max-w-md flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl transition-all hover:border-white/20">
+          {/* User Video Card - Enlarged */}
+          <div className="group relative flex h-[50vh] w-full max-w-4xl flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl transition-all hover:border-white/20">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-100"
+              className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
             ></video>
             <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-md border border-white/5">
               <FiUser className="text-blue-400" />
@@ -251,23 +251,11 @@ function InterviewPage() {
               </div>
             )}
           </div>
-
-          {/* AI Avatar Card */}
-          <div className="group relative flex h-64 w-full md:w-1/2 max-w-md flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl transition-all hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50"></div>
-            <div className="h-full w-full">
-              <Avatar3D />
-            </div>
-            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-md border border-white/5">
-               <FiCpu className="text-white" />
-              <span className="text-xs font-medium text-white">AI Interviewer</span>
-            </div>
-          </div>
         </motion.div>
 
         {/* Question Card */}
         <motion.div
-          className="mt-8 w-full max-w-3xl rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl shadow-2xl"
+          className="mt-4 w-full max-w-4xl rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl shadow-2xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -286,7 +274,7 @@ function InterviewPage() {
 
         {/* Controls */}
         <motion.div
-          className="mt-8 flex flex-wrap justify-center gap-4"
+          className="mt-6 flex flex-wrap justify-center gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -344,7 +332,7 @@ function InterviewPage() {
 
       {/* --- Feedback Sidebar (Right side) --- */}
       <div className="relative z-10 hidden w-1/4 flex-col border-l border-white/5 bg-black/20 backdrop-blur-2xl md:flex">
-        <div className="p-6">
+        <div className="p-6 mt-20">
           <h2 className="mb-6 text-xl font-bold text-white flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-white"></span>
             Live Analysis

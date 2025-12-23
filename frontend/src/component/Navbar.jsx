@@ -105,7 +105,7 @@ function Navbar() {
 
         {/* Right: Start Button */}
         <div className="pointer-events-auto">
-          {isLoggedIn && (
+          {isLoggedIn && location.pathname !== "/interview" && (
             <button
               onClick={() => setIsModalOpen(true)}
               className="
