@@ -8,7 +8,7 @@ export const getDashboardData = async (req, res) => {
     const completedSessions = await InterviewSession.find({
       user: userId,
       status: "completed",
-    }).sort({ createdAt: "asc" });
+    }).sort({ createdAt: -1 }).select("-answers");
 
     if (completedSessions.length === 0) {
       return res.status(200).json({

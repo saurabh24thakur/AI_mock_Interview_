@@ -173,6 +173,7 @@ function InterviewPage() {
         `${serverURL}/api/interviews/save`,
         {
           jobRole: jobRole,
+          difficulty: "Medium",
           answers,
           overallScore,
           finalFluencyScore: Math.round(

@@ -15,13 +15,38 @@ async function generateWithRetry(params, retries = 3) {
     } catch (error) {
       // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
       if ((error.status === 429 || error.code === 429 || error.status === 503) && i < retries) {
-        const delay = 15000 * (i + 1); // Wait 15s, 30s, 45s
+        const delay = 2000 * (i + 1); // Wait 2s, 4s, 6s
         console.warn(`⚠️ Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
         throw error;
       }
     }
+  }
+}
+
+// Helper: Clean and Parse JSON from Gemini Response
+function cleanAndParseJSON(raw, isArray = false) {
+  try {
+    
+    const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+
+    const startChar = isArray ? '[' : '{';
+    const endChar = isArray ? ']' : '}';
+    const start = raw.indexOf(startChar);
+    const end = raw.lastIndexOf(endChar);
+    
+    if (start !== -1 && end !== -1 && end > start) {
+      const jsonStr = raw.substring(start, end + 1);
+      try {
+        return JSON.parse(jsonStr);
+      } catch (e2) {
+        console.error("Failed to parse extracted JSON:", jsonStr);
+      }
+    }
+    throw e;
   }
 }
 
@@ -32,6 +57,7 @@ export const saveInterview = async (req, res) => {
     const userId = req.user._id;
     const {
       jobRole,
+      difficulty,
       answers,
       overallScore,
       finalFluencyScore,
@@ -52,6 +78,7 @@ export const saveInterview = async (req, res) => {
     const session = await InterviewSession.create({
       user: userId,
       jobRole,
+      difficulty,
       answers,
       overallScore,
       finalFluencyScore,
@@ -101,14 +128,14 @@ async function transcribeAudio(filePath) {
     ],
   });
 
-  // ✅ Safely extract transcript text
+  // Safely extract transcript text
   const transcript =
     result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
     result?.candidates?.[0]?.content?.parts?.[0]?.text ||
     result?.text ||
     "";
 
-  console.log("🎙️ Transcription Result:", transcript);
+  console.log(" Transcription Result:", transcript);
 
   return transcript;
 }
@@ -141,7 +168,7 @@ async function performGeminiAnalysis(question, transcript) {
     ],
   });
 
-  // ✅ Safely extract AI analysis text
+  //  Safely extract AI analysis text
   const rawText =
     result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
     result?.candidates?.[0]?.content?.parts?.[0]?.text ||
@@ -151,8 +178,7 @@ async function performGeminiAnalysis(question, transcript) {
   console.log(" Gemini Analysis Result:", rawText);
 
   try {
-    const cleaned = rawText.replace(/```json\n?|\n?```/g, "").trim();
-    return JSON.parse(cleaned);
+    return cleanAndParseJSON(rawText, false);
   } catch (e) {
     console.error("Failed to parse analysis JSON:", e);
     return {
@@ -169,12 +195,12 @@ async function performGeminiAnalysis(question, transcript) {
 export const analyzeAnswer = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "❌ No audio file uploaded" });
+      return res.status(400).json({ message: " No audio file uploaded -X" });
     }
 
     const { question } = req.body;
     if (!question) {
-      return res.status(400).json({ message: "❌ Question is required" });
+      return res.status(400).json({ message: " Question is required -X" });
     }
 
     // Step 1: Transcribe audio
@@ -193,7 +219,7 @@ export const analyzeAnswer = async (req, res) => {
     console.error("Analysis controller error:", err);
     res.status(500).json({ message: "Server error during AI analysis" });
   } finally {
-    if (req.file) fs.unlinkSync(req.file.path); // cleanup
+    if (req.file) fs.unlinkSync(req.file.path); 
   }
 };
 
@@ -227,12 +253,11 @@ export const generateQuestions = async (req, res) => {
       result?.text ||
       "undefined";
 
-    console.log("🔹 Gemini raw output (generateQuestions):", raw);
+    console.log("🔹 LLM raw output (generateQuestions):", raw);
 
     let questionsArray;
     try {
-      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleaned);
+      questionsArray = cleanAndParseJSON(raw, true);
     } catch (e) {
       console.error("Failed to parse Gemini response:", raw);
       return res.status(500).json({ message: "Invalid AI response format" });
@@ -251,8 +276,6 @@ export const generateQuestions = async (req, res) => {
 // ==================== GENERATE QUESTIONS FROM JOB DESCRIPTION ====================
 export const generateQuestionsFromJD = async (req, res) => {
   try {
-    
-
     const { experience, description, expertise } = req.body;
 
     if (!experience || !description || !expertise) {
@@ -290,8 +313,7 @@ export const generateQuestionsFromJD = async (req, res) => {
 
     let questionsArray;
     try {
-      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleaned);
+      questionsArray = cleanAndParseJSON(raw, true);
     } catch (e) {
       console.error("Failed to parse Gemini response:", raw);
       return res.status(500).json({ message: "Invalid AI response format" });
@@ -300,7 +322,6 @@ export const generateQuestionsFromJD = async (req, res) => {
     return res.status(200).json({ questions: questionsArray });
   } catch (error) {
     console.error("Error in generateQuestionsFromJD:", error);
-    console.error("Full Error Details:", JSON.stringify(error, null, 2));
     console.error("Full Error Details:", JSON.stringify(error, null, 2));
     res
       .status(500)
