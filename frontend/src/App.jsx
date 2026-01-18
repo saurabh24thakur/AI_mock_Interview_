@@ -9,7 +9,7 @@ import Navbar from './component/Navbar'
 import Dashboard from './pages/dashboard/DashBoard';
 import AddInterview from './component/AddInterview';
 import InterviewPage from './pages/interview/InterviewPage';
-export const serverURL="https://ai-nterview-backend.onrender.com";
+export const serverURL="https://mockmatebackend.vercel.app";
 //export const serverURL="http://localhost:3000";
 
 
