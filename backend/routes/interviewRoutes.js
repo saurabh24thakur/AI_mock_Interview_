@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // --- Routes ---
-router.post("/analyze", protect, upload.single("audio"), analyzeAnswer);
+router.post("/analyze", protect, analyzeAnswer);
 router.post("/save", protect, saveInterview);
 router.get("/", protect, getUserInterviews);
 router.post("/generate-questions", protect, generateQuestions);
