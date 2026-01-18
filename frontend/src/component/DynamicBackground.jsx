@@ -6,7 +6,7 @@ const DynamicBackground = () => {
     <div className="fixed inset-0 z-0 overflow-hidden bg-black">
       {/* Ambient Mist 1 - Top Left */}
       <motion.div
-        className="absolute -top-[10%] -left-[10%] w-[80vw] h-[80vw] rounded-full bg-white/5 blur-[120px]"
+        className="absolute -top-[10%] -left-[10%] w-[80vw] h-[80vw] rounded-full bg-white/5 blur-[80px] will-change-transform"
         animate={{
           x: [0, 30, 0],
           y: [0, 20, 0],
@@ -22,7 +22,7 @@ const DynamicBackground = () => {
 
       {/* Ambient Mist 2 - Bottom Right */}
       <motion.div
-        className="absolute -bottom-[10%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-slate-500/10 blur-[100px]"
+        className="absolute -bottom-[10%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-slate-500/10 blur-[60px] will-change-transform"
         animate={{
           x: [0, -20, 0],
           y: [0, -30, 0],
@@ -38,7 +38,7 @@ const DynamicBackground = () => {
 
       {/* Floating Fog 1 */}
       <motion.div
-        className="absolute top-1/3 left-1/4 w-[40rem] h-[40rem] rounded-full bg-gray-400/5 blur-[90px]"
+        className="absolute top-1/3 left-1/4 w-[40rem] h-[40rem] rounded-full bg-gray-400/5 blur-[50px] will-change-transform"
         animate={{
           x: [0, 60, -30, 0],
           y: [0, -40, 30, 0],
@@ -53,7 +53,7 @@ const DynamicBackground = () => {
 
       {/* Floating Fog 2 */}
       <motion.div
-        className="absolute bottom-1/3 right-1/3 w-[35rem] h-[35rem] rounded-full bg-slate-300/5 blur-[80px]"
+        className="absolute bottom-1/3 right-1/3 w-[35rem] h-[35rem] rounded-full bg-slate-300/5 blur-[40px] will-change-transform"
         animate={{
           x: [0, -50, 20, 0],
           y: [0, 50, -30, 0],
@@ -66,10 +66,7 @@ const DynamicBackground = () => {
         }}
       />
 
-      {/* Subtle Grain Texture */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
-           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} 
-      />
+
     </div>
   );
 };

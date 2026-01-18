@@ -25,9 +25,10 @@ function InterviewPage() {
   const [completedQuestions, setCompletedQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false); // Ref to track state in event listeners
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusText, setStatusText] = useState(
-    "Click 'Submit Answer' to start recording."
+    "Click 'Start Answer' to start recording."
   );
   const [isInterviewComplete, setIsInterviewComplete] = useState(false);
   const navigate = useNavigate();
@@ -65,58 +66,252 @@ function InterviewPage() {
     }
   }, [navigate, jobRole, location.state?.questions]);
 
+  // Helper to update both state and ref
+  const updateIsRecording = (val) => {
+    setIsRecording(val);
+    isRecordingRef.current = val;
+  };
+
+  // --- Web Speech API Setup ---
+  const recognitionRef = useRef(null);
+  const transcriptRef = useRef(""); // Stores finalized text
+  const interimTranscriptRef = useRef(""); // Stores current interim text
+  const [transcript, setTranscript] = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false); // For UI animation
+
+  const setupRecognition = () => {
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false; 
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+          console.log("🎤 Speech Recognition Started");
+      };
+
+      recognition.onsoundstart = () => {
+          console.log("🔊 Sound Detected");
+          setIsSpeaking(true);
+      };
+
+      recognition.onsoundend = () => {
+          console.log("🔇 Sound Ended");
+          setIsSpeaking(false);
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = "";
+        let finalTranscriptChunk = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscriptChunk += event.results[i][0].transcript + " ";
+            console.log("✅ Final Transcript Chunk:", event.results[i][0].transcript);
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+            console.log("📝 Interim Transcript:", event.results[i][0].transcript);
+          }
+        }
+
+        if (finalTranscriptChunk) {
+            transcriptRef.current += finalTranscriptChunk;
+        }
+        
+        interimTranscriptRef.current = interimTranscript; 
+        setTranscript(transcriptRef.current + interimTranscript); 
+        
+        setIsSpeaking(true);
+        clearTimeout(recognition.speakingTimeout);
+        recognition.speakingTimeout = setTimeout(() => setIsSpeaking(false), 1000);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("❌ Speech Recognition Error:", event.error);
+        if (event.error === 'no-speech') {
+           return; 
+        }
+        if (event.error === 'not-allowed') {
+           alert("Microphone access denied. Please allow microphone access.");
+           updateIsRecording(false);
+        }
+      };
+      
+      recognition.onend = () => {
+          console.log("🛑 Speech Recognition Ended");
+          setIsSpeaking(false); 
+          if (isRecordingRef.current) {
+             console.log("🔄 Restarting Speech Recognition...");
+             try {
+                recognition.start();
+             } catch (e) {
+                console.error("Failed to restart:", e);
+             }
+          }
+      };
+      
+      recognitionRef.current = recognition;
+    }
+  };
+
+  useEffect(() => {
+    setupRecognition();
+  }, []);
+
+
+  const [audioLevel, setAudioLevel] = useState(0);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
+  const setupAudioVisualizer = async (stream) => {
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) {
+        console.warn("No audio tracks found in stream for visualizer.");
+        return;
+    }
+    
+    console.log("Audio Track Status:", { 
+        label: audioTrack.label, 
+        enabled: audioTrack.enabled, 
+        muted: audioTrack.muted, 
+        readyState: audioTrack.readyState 
+    });
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    if (audioContext.state === 'suspended') {
+        try {
+            await audioContext.resume();
+            console.log("AudioContext resumed. State:", audioContext.state);
+        } catch (e) {
+            console.error("Failed to resume AudioContext:", e);
+        }
+    }
+
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    
+    analyser.fftSize = 256;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    source.connect(analyser);
+    
+    audioContextRef.current = audioContext;
+    analyserRef.current = analyser;
+    dataArrayRef.current = dataArray;
+
+    const updateVolume = () => {
+      if (!analyserRef.current) return;
+      
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+      
+      // Debug log every ~60 frames (approx 1 sec)
+      if (Math.random() < 0.05) {
+         console.log("Raw Audio Average:", average);
+      }
+
+      // Scale to 0-100 roughly
+      const level = Math.min(100, Math.max(0, average * 5)); // Increased sensitivity to 5x
+      
+      setAudioLevel(level);
+      animationFrameRef.current = requestAnimationFrame(updateVolume);
+    };
+
+    updateVolume();
+  };
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        audio: true, // Request audio for the visualizer
       });
       videoRef.current.srcObject = stream;
+      videoRef.current.muted = true; // Prevent feedback loop
       setIsCameraOn(true);
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      mediaRecorderRef.current.onstop = submitAudioForAnalysis;
+      
+      setupAudioVisualizer(stream);
     } catch (err) {
-      alert("Could not access camera/microphone.");
+      console.error("Error accessing camera:", err);
+      if (err.name === 'NotAllowedError') {
+          alert("Permission denied. Please allow camera and microphone access in your browser settings.");
+      } else if (err.name === 'NotFoundError') {
+          alert("No camera or microphone found. Please connect a device.");
+      } else if (err.name === 'NotReadableError') {
+          alert("Camera/Microphone is in use by another application. Please close Zoom, Teams, or other apps.");
+      } else {
+          alert(`Could not access device: ${err.message}`);
+      }
     }
   };
 
   const stopCamera = () => {
     const stream = videoRef.current.srcObject;
     if (stream) stream.getTracks().forEach((t) => t.stop());
+    
+    if (audioContextRef.current) {
+        audioContextRef.current.close();
+        cancelAnimationFrame(animationFrameRef.current);
+    }
+    
     setIsCameraOn(false);
-    setIsRecording(false);
+    updateIsRecording(false);
+    if (recognitionRef.current) recognitionRef.current.stop();
   };
 
-  const handleRecordingToggle = () => {
+  const handleRecordingToggle = async () => {
     if (!isCameraOn) {
       alert("Please start your camera first.");
       return;
     }
+    
+    if (!recognitionRef.current) {
+        setupRecognition(); 
+        if (!recognitionRef.current) {
+            alert("Speech recognition not supported.");
+            return;
+        }
+    }
+
     if (isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsAnalyzing(true);
-      setStatusText("Analyzing your response...");
-      setFluency("Analyzing...");
-      setCorrectness("Analyzing...");
+      recognitionRef.current.stop();
+      updateIsRecording(false);
+      submitAnswer(); 
     } else {
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setStatusText("Recording... Click again to stop.");
+      // Mic check removed as it's already handled by startCamera
+      if (!isCameraOn) {
+         alert("Please start camera/mic first.");
+         return;
+      }
+
+      setTranscript(""); 
+      transcriptRef.current = ""; // Clear ref
+      try {
+        recognitionRef.current.start();
+        updateIsRecording(true);
+        setStatusText("Listening... Speak clearly.");
+      } catch (err) {
+        console.error("Failed to start recognition:", err);
+        alert("Failed to start speech recognition. Please refresh and try again.");
+      }
     }
   };
 
-  const submitAudioForAnalysis = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "user-answer.webm");
-    formData.append("question", questions[currentQuestionIndex]);
+  const submitAnswer = async () => {
+    setIsAnalyzing(true);
+    setStatusText("Analyzing your response...");
+    setFluency("Analyzing...");
+    setCorrectness("Analyzing...");
+
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const token = userInfo ? userInfo.token : null;
@@ -124,11 +319,22 @@ function InterviewPage() {
         navigate("/login");
         return;
       }
+
+      // Wait a brief moment to ensure final transcript is captured
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const finalAnswer = (transcriptRef.current + interimTranscriptRef.current).trim() || "No answer provided.";
+      console.log("Submitting Answer:", finalAnswer); // Debug log
+
       const { data } = await axios.post(
         `${serverURL}/api/interviews/analyze`,
-        formData,
+        {
+            question: questions[currentQuestionIndex],
+            answer: finalAnswer
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setFluency(data.analysis.fluency || "Analysis complete.");
       setCorrectness(data.analysis.correctness || "Analysis complete.");
       setAnswers((prev) => [
@@ -144,7 +350,7 @@ function InterviewPage() {
       setCompletedQuestions((prev) => [...prev, questions[currentQuestionIndex]]);
       setCurrentQuestionIndex((prevIndex) => {
         if (prevIndex < questions.length - 1) {
-          setStatusText("Click 'Submit Answer' for next question.");
+          setStatusText("Click 'Start Answer' for next question.");
           return prevIndex + 1;
         } else {
           setStatusText("Interview complete! 🎉 Click 'Finish & Save' to view your report.");
@@ -153,10 +359,12 @@ function InterviewPage() {
         }
       });
     } catch (err) {
+      console.error(err);
       setFluency("Error during analysis.");
       setCorrectness("Error during analysis.");
     } finally {
       setIsAnalyzing(false);
+      updateIsRecording(false);
     }
   };
 
@@ -173,6 +381,7 @@ function InterviewPage() {
         `${serverURL}/api/interviews/save`,
         {
           jobRole: jobRole,
+          difficulty: "Medium",
           answers,
           overallScore,
           finalFluencyScore: Math.round(
@@ -209,6 +418,12 @@ function InterviewPage() {
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-black text-white font-sans selection:bg-gray-500/30">
+      {/* Browser Compatibility Warning */}
+      {!("webkitSpeechRecognition" in window || "SpeechRecognition" in window) && (
+        <div className="absolute top-0 left-0 w-full bg-yellow-600/90 text-white p-2 text-center z-50 backdrop-blur-md font-medium">
+           ⚠️ Your browser does not support Speech Recognition. Please use <b>Google Chrome</b> or <b>Microsoft Edge</b>.
+        </div>
+      )}
       <DynamicBackground />
 
       {/* --- Main Content (Left side) --- */}
@@ -249,6 +464,22 @@ function InterviewPage() {
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                 <p className="text-sm text-gray-400">Camera Off</p>
               </div>
+            )}
+            
+            {/* Audio Visualizer Overlay */}
+            {isCameraOn && (
+               <div className="absolute bottom-4 right-4 flex items-end gap-1 h-8 bg-black/40 p-2 rounded-lg backdrop-blur-sm border border-white/5">
+                  <div className="text-[10px] text-white/70 mr-1 font-mono self-center tracking-wider">MIC</div>
+                  {[...Array(5)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className={`w-1 rounded-full transition-all duration-75 ${
+                         audioLevel > (i * 20) ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" : "bg-white/10"
+                      }`}
+                      style={{ height: audioLevel > (i * 20) ? `${Math.max(20, audioLevel * 0.8)}%` : "20%" }}
+                    />
+                  ))}
+               </div>
             )}
           </div>
         </motion.div>
@@ -313,9 +544,30 @@ function InterviewPage() {
             {isAnalyzing ? (
               "Processing..."
             ) : isRecording ? (
-              <><FiStopCircle /> Stop & Submit</>
+              <>
+                <FiStopCircle /> Stop & Submit
+                {isSpeaking && (
+                  <div className="flex gap-1 ml-2">
+                    <motion.div
+                      className="w-1.5 h-1.5 bg-white rounded-full"
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.div
+                      className="w-1.5 h-1.5 bg-white rounded-full"
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                    />
+                    <motion.div
+                      className="w-1.5 h-1.5 bg-white rounded-full"
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
-              <><FiMic /> Submit Answer</>
+              <><FiMic /> Start Answer</>
             )}
           </button>
 

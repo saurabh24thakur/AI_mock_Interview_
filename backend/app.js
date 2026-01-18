@@ -1,5 +1,5 @@
+import "dotenv/config"; // Load env vars before any other imports
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 
@@ -8,7 +8,6 @@ import userRoutes from "./routes/userRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js"; 
 import dashboardRoutes from "./routes/dashboardRoutes.js"; 
 
-dotenv.config();
 connectDB();
 
 const app = express();
@@ -16,13 +15,13 @@ const app = express();
 // Middleware
 const allowedOrigins = [
   'https://ai-mock-interview-frontend-2.pages.dev',
-  /^https:\/\/.*\.ai-mock-interview-frontend-2\.pages\.dev$/, // Matches any subdomain
-  'http://localhost:5173' // For local development
+  'http://localhost:5173',
+  'http://localhost:5174'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
+
     if (!origin) return callback(null, true);
 
     const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -51,7 +50,7 @@ app.use("/api/dashboard", dashboardRoutes);  // performance reports
 
 // Default Route
 app.get("/", (req, res) => {
-  res.send("✅ API is running...");
+  res.send("API is running...");
 });
 
 // Server

@@ -1,27 +1,63 @@
-import fs from "fs";
+
 import Interview from "../models/Interview.js";
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from "openai";
 import InterviewSession from "../models/interviewSession.model.js";
-import generateFeedback from "../utils/feedbackGenerator.js"; // Import the feedback generator
+import generateFeedback from "../utils/feedbackGenerator.js"; 
 
-// ==================== GEMINI SETUP ====================
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// ==================== OPENROUTER SETUP ====================
+const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
 
-// Helper: Retry mechanism for 429 Rate Limits
-async function generateWithRetry(params, retries = 3) {
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: apiKey || "dummy-key-to-prevent-crash", // Fallback to prevent startup crash
+});
+
+// Helper: Retry mechanism for Rate Limits / Errors
+async function generateWithRetry(messages, retries = 3) {
+  if (!apiKey || apiKey === "dummy-key-to-prevent-crash") {
+      throw new Error("OpenRouter API Key is missing. Please add OPENROUTER_API_KEY to your .env file.");
+  }
+
   for (let i = 0; i <= retries; i++) {
     try {
-      return await genAI.models.generateContent(params);
+      const completion = await openai.chat.completions.create({
+        model: "openai/gpt-4o-mini", 
+        messages: messages,
+        response_format: { type: "json_object" }, 
+      });
+      return completion.choices[0].message.content;
     } catch (error) {
-      // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
-      if ((error.status === 429 || error.code === 429 || error.status === 503) && i < retries) {
-        const delay = 15000 * (i + 1); // Wait 15s, 30s, 45s
+      if ((error.status === 429 || error.status === 503) && i < retries) {
+        const delay = 2000 * (i + 1); 
         console.warn(`⚠️ Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
         throw error;
       }
     }
+  }
+}
+
+// Helper: Clean and Parse JSON
+function cleanAndParseJSON(raw, isArray = false) {
+  try {
+    const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+    const startChar = isArray ? '[' : '{';
+    const endChar = isArray ? ']' : '}';
+    const start = raw.indexOf(startChar);
+    const end = raw.lastIndexOf(endChar);
+    
+    if (start !== -1 && end !== -1 && end > start) {
+      const jsonStr = raw.substring(start, end + 1);
+      try {
+        return JSON.parse(jsonStr);
+      } catch (e2) {
+        console.error("Failed to parse extracted JSON:", jsonStr);
+      }
+    }
+    throw e;
   }
 }
 
@@ -32,6 +68,7 @@ export const saveInterview = async (req, res) => {
     const userId = req.user._id;
     const {
       jobRole,
+      difficulty,
       answers,
       overallScore,
       finalFluencyScore,
@@ -52,6 +89,7 @@ export const saveInterview = async (req, res) => {
     const session = await InterviewSession.create({
       user: userId,
       jobRole,
+      difficulty,
       answers,
       overallScore,
       finalFluencyScore,
@@ -83,39 +121,8 @@ export const getUserInterviews = async (req, res) => {
 };
 
 
-// ==================== TRANSCRIBE AUDIO ====================
-async function transcribeAudio(filePath) {
-  const audioData = fs.readFileSync(filePath);
-  const base64Audio = audioData.toString("base64");
-
-  const result = await generateWithRetry({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        inlineData: {
-          mimeType: "audio/webm", // frontend MediaRecorder default
-          data: base64Audio,
-        },
-      },
-      { text: "Transcribe this audio into plain text only." },
-    ],
-  });
-
-  // ✅ Safely extract transcript text
-  const transcript =
-    result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    result?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    result?.text ||
-    "";
-
-  console.log("🎙️ Transcription Result:", transcript);
-
-  return transcript;
-}
-
-
 // ==================== ANALYZE TEXT ANSWER ====================
-async function performGeminiAnalysis(question, transcript) {
+async function performAnalysis(question, transcript) {
   const prompt = `
     You are an AI interviewer. Evaluate the following answer.
     
@@ -131,28 +138,14 @@ async function performGeminiAnalysis(question, transcript) {
     }
   `;
 
-  const result = await generateWithRetry({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: prompt }],
-      },
-    ],
-  });
-
-  // ✅ Safely extract AI analysis text
-  const rawText =
-    result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    result?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    result?.text ||
-    "{}";
-
-  console.log(" Gemini Analysis Result:", rawText);
-
   try {
-    const cleaned = rawText.replace(/```json\n?|\n?```/g, "").trim();
-    return JSON.parse(cleaned);
+    const rawText = await generateWithRetry([
+        { role: "system", content: "You are a helpful AI interviewer that outputs JSON." },
+        { role: "user", content: prompt }
+    ]);
+
+    console.log(" AI Analysis Result:", rawText);
+    return cleanAndParseJSON(rawText, false);
   } catch (e) {
     console.error("Failed to parse analysis JSON:", e);
     return {
@@ -168,32 +161,28 @@ async function performGeminiAnalysis(question, transcript) {
 // ==================== ANALYZE ANSWER ====================
 export const analyzeAnswer = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "❌ No audio file uploaded" });
+    const { question, answer } = req.body;
+    
+    console.log(" Backend Received Analysis Request:");
+    console.log("   Question:", question);
+    console.log("   Answer:", answer);
+
+    if (!question || !answer) {
+      return res.status(400).json({ message: "Question and answer text are required." });
     }
 
-    const { question } = req.body;
-    if (!question) {
-      return res.status(400).json({ message: "❌ Question is required" });
-    }
-
-    // Step 1: Transcribe audio
-    const transcript = await transcribeAudio(req.file.path);
-
-    // Step 2: Analyze transcript with Gemini
-    const analysis = await performGeminiAnalysis(transcript, question);
+    // Direct analysis of the provided text answer
+    const analysis = await performAnalysis(question, answer);
 
     res.status(200).json({
       user: req.user._id,
       question,
-      transcript,
+      transcript: answer, 
       analysis,
     });
   } catch (err) {
     console.error("Analysis controller error:", err);
     res.status(500).json({ message: "Server error during AI analysis" });
-  } finally {
-    if (req.file) fs.unlinkSync(req.file.path); // cleanup
   }
 };
 
@@ -209,32 +198,31 @@ export const generateQuestions = async (req, res) => {
     }
 
     const prompt = `
-      Generate 1 interview questions for "${jobRole}" at "${difficulty}" level.
-      Include technical, behavioral, and situational questions.
-      Output ONLY JSON array of strings.
+      Generate exactly 1 interview question for "${jobRole}" at "${difficulty}" level.
+      The question can be technical, behavioral, or situational.
+      Output ONLY JSON array of strings containing that single question.
     `;
 
-    //  Generate with Gemini
-    const result = await generateWithRetry({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
+    //  Generate with OpenRouter
+    const raw = await generateWithRetry([
+        { role: "system", content: "You are a helpful AI assistant that outputs JSON." },
+        { role: "user", content: prompt }
+    ]);
 
-    //  Safely extract text from multiple possible SDK response shapes
-    const raw =
-      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      result?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      result?.text ||
-      "undefined";
-
-    console.log("🔹 Gemini raw output (generateQuestions):", raw);
+    console.log("🔹 LLM raw output (generateQuestions):", raw);
 
     let questionsArray;
     try {
-      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleaned);
+      const parsed = cleanAndParseJSON(raw, true);
+      // Handle case where AI wraps array in an object key
+      if (!Array.isArray(parsed) && typeof parsed === 'object') {
+          const possibleKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
+          questionsArray = possibleKey ? parsed[possibleKey] : [];
+      } else {
+          questionsArray = parsed;
+      }
     } catch (e) {
-      console.error("Failed to parse Gemini response:", raw);
+      console.error("Failed to parse AI response:", raw);
       return res.status(500).json({ message: "Invalid AI response format" });
     }
 
@@ -251,8 +239,6 @@ export const generateQuestions = async (req, res) => {
 // ==================== GENERATE QUESTIONS FROM JOB DESCRIPTION ====================
 export const generateQuestionsFromJD = async (req, res) => {
   try {
-    
-
     const { experience, description, expertise } = req.body;
 
     if (!experience || !description || !expertise) {
@@ -269,38 +255,36 @@ export const generateQuestionsFromJD = async (req, res) => {
       - Expertise: ${expertise}
       - Job Description: "${description}"
 
-      Generate 1 diverse interview questions (technical, behavioral, situational).
-      Output ONLY a JSON array of strings.
+      Generate exactly 1 interview question (technical, behavioral, or situational).
+      Output ONLY a JSON array of strings containing that single question. Example: ["Question 1"]
     `;
 
-    // Call Gemini
-    const result = await generateWithRetry({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
+    // Call OpenRouter
+    const raw = await generateWithRetry([
+        { role: "system", content: "You are a helpful AI assistant that outputs JSON." },
+        { role: "user", content: prompt }
+    ]);
 
-    //  extract text
-    const raw =
-      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      result?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      result?.text ||
-      "undefined";
-
-    console.log("🔹 Gemini raw output (generateQuestionsFromJD):", raw);
+    console.log("🔹 AI raw output (generateQuestionsFromJD):", raw);
 
     let questionsArray;
     try {
-      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
-      questionsArray = JSON.parse(cleaned);
+      const parsed = cleanAndParseJSON(raw, true);
+      // Handle case where AI wraps array in an object key
+      if (!Array.isArray(parsed) && typeof parsed === 'object') {
+          const possibleKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
+          questionsArray = possibleKey ? parsed[possibleKey] : [];
+      } else {
+          questionsArray = parsed;
+      }
     } catch (e) {
-      console.error("Failed to parse Gemini response:", raw);
+      console.error("Failed to parse AI response:", raw);
       return res.status(500).json({ message: "Invalid AI response format" });
     }
 
     return res.status(200).json({ questions: questionsArray });
   } catch (error) {
     console.error("Error in generateQuestionsFromJD:", error);
-    console.error("Full Error Details:", JSON.stringify(error, null, 2));
     console.error("Full Error Details:", JSON.stringify(error, null, 2));
     res
       .status(500)

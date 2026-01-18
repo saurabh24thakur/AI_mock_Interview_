@@ -218,7 +218,16 @@ function Dashboard() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={dashboardData.performanceData}>
                     <CartesianGrid stroke="#333" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="domain" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
+                    <XAxis 
+                      dataKey="domain" 
+                      stroke="#6b7280" 
+                      tick={{fill: '#9ca3af', fontSize: 12}} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                    />
                     <YAxis stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
                     <Bar dataKey="score" fill="#ffffff" radius={[4, 4, 0, 0]} barSize={40} />
@@ -272,9 +281,9 @@ function Dashboard() {
               {dashboardData.previousInterviews.length === 0 ? (
                 <p className="text-gray-500 italic">No previous interviews found.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                   <table className="w-full text-left border-collapse">
-                    <thead>
+                    <thead className="sticky top-0 bg-black z-10">
                       <tr className="border-b border-white/10 text-gray-400 text-sm uppercase tracking-wider">
                         <th className="p-4 font-medium">Date</th>
                         <th className="p-4 font-medium">Job Role</th>
@@ -285,7 +294,7 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody className="text-sm text-gray-300">
-                      {dashboardData.previousInterviews.slice(0, 5).map((interview) => (
+                      {dashboardData.previousInterviews.map((interview) => (
                         <tr 
                           key={interview.id} 
                           className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
@@ -378,7 +387,16 @@ function Dashboard() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={dashboardData.performanceData}>
                     <CartesianGrid stroke="#333" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="domain" stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
+                    <XAxis 
+                      dataKey="domain" 
+                      stroke="#6b7280" 
+                      tick={{fill: '#9ca3af', fontSize: 12}} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                    />
                     <YAxis stroke="#6b7280" tick={{fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
                     <Bar dataKey="score" fill="#ffffff" radius={[4, 4, 0, 0]} barSize={40} />

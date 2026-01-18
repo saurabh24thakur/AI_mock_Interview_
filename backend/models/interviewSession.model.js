@@ -16,6 +16,7 @@ const interviewSessionSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     jobRole: { type: String, required: true },
+    difficulty: { type: String, default: "Medium" },
     answers: [answerSchema],
 
     // Final aggregated scores
