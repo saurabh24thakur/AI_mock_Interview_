@@ -1,27 +1,19 @@
 import express from "express";
-import multer from "multer";
 import {
   saveInterview,
   getUserInterviews,
   analyzeAnswer,
   generateQuestions,
   generateQuestionsFromJD,
+  generateResumeQuestion,
 } from "../controller/interviewController.js";
 import protect from "../middleware/authMiddleware.js";
+import multer from "multer";
+
+// Configure multer for temporary file storage
+const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
-
-// --- Multer storage setup ---
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // make sure uploads/ exists
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ storage });
 
 // --- Routes ---
 router.post("/analyze", protect, analyzeAnswer);
@@ -29,5 +21,6 @@ router.post("/save", protect, saveInterview);
 router.get("/", protect, getUserInterviews);
 router.post("/generate-questions", protect, generateQuestions);
 router.post("/generate-from-jd", protect, generateQuestionsFromJD);
+router.post("/generate-from-resume", protect, upload.single("resume"), generateResumeQuestion);
 
 export default router;

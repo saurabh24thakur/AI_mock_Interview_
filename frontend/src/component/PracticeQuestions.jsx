@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCode, FiDatabase, FiLayout, FiServer, FiUsers, FiCpu } from 'react-icons/fi';
+import { FiCode, FiDatabase, FiLayout, FiServer, FiUsers, FiCpu, FiFileText } from 'react-icons/fi';
+import ResumeUploadModal from './ResumeUploadModal';
 
 const topics = [
   { id: 'frontend', name: 'Frontend Developer', icon: <FiLayout />, role: 'Frontend Developer' },
@@ -10,6 +11,7 @@ const topics = [
   { id: 'dsa', name: 'Data Structures', icon: <FiCode />, role: 'Data Structures & Algorithms' },
   { id: 'system-design', name: 'System Design', icon: <FiCpu />, role: 'System Design' },
   { id: 'hr', name: 'HR / Behavioral', icon: <FiUsers />, role: 'HR' },
+  { id: 'resume', name: 'Resume-Based', icon: <FiFileText />, role: 'Resume' },
 ];
 
 const containerVariants = {
@@ -30,9 +32,14 @@ const itemVariants = {
 
 function PracticeQuestions() {
   const useNavigateHook = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleStartPractice = (role) => {
-    useNavigateHook('/interview', { state: { jobRole: role } });
+    if (role === 'Resume') {
+      setIsModalOpen(true);
+    } else {
+      useNavigateHook('/interview', { state: { jobRole: role } });
+    }
   };
 
   return (
@@ -67,6 +74,7 @@ function PracticeQuestions() {
           </motion.div>
         ))}
       </div>
+      <ResumeUploadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </motion.div>
   );
 }
