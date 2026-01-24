@@ -3,6 +3,11 @@ import Interview from "../models/Interview.js";
 import OpenAI from "openai";
 import InterviewSession from "../models/interviewSession.model.js";
 import generateFeedback from "../utils/feedbackGenerator.js"; 
+import Groq from "groq-sdk";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
+import fs from "fs";
 
 // ==================== OPENROUTER SETUP ====================
 const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
@@ -10,6 +15,11 @@ const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: apiKey || "dummy-key-to-prevent-crash", // Fallback to prevent startup crash
+});
+
+// ==================== GROQ SETUP ====================
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // Helper: Retry mechanism for Rate Limits / Errors
@@ -29,7 +39,7 @@ async function generateWithRetry(messages, retries = 3) {
     } catch (error) {
       if ((error.status === 429 || error.status === 503) && i < retries) {
         const delay = 2000 * (i + 1); 
-        console.warn(`⚠️ Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
+        console.warn(`Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
         throw error;
@@ -289,5 +299,99 @@ export const generateQuestionsFromJD = async (req, res) => {
     res
       .status(500)
       .json({ message: "Server error while generating questions" });
+  }
+};
+
+// ==================== GENERATE RESUME-BASED QUESTION ====================
+
+export const generateResumeQuestion = async (req, res) => {
+  const filePath = req.file?.path;
+  console.log("generateResumeQuestion started. File path:", filePath);
+
+  try {
+    const { jobDescription } = req.body;
+    console.log("Job Description received:", jobDescription?.substring(0, 50) + "...");
+
+    // Basic validation to ensure we have what we need
+    if (!req.file) {
+      console.error(" No file uploaded.");
+      return res.status(400).json({ message: "Resume PDF is required." });
+    }
+    if (!jobDescription) {
+      console.error(" No job description provided.");
+      return res.status(400).json({ message: "Job description is required." });
+    }
+
+    let resumeText = "";
+    try {
+      console.log("Reading PDF file...");
+      const dataBuffer = fs.readFileSync(req.file.path);
+      const data = await pdf(dataBuffer);
+      resumeText = data.text;
+      console.log(" PDF parsed successfully. Text length:", resumeText.length);
+    } catch (pdfError) {
+      console.error(" PDF Parsing Error:", pdfError);
+      // If PDF fails, we don't want to break the whole flow, but we need some text.
+      resumeText = "Could not extract text from resume.";
+    }
+
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("GROQ_API_KEY is missing. Using fallback question.");
+      throw new Error("GROQ_API_KEY missing");
+    }
+
+    console.log("Sending request to Groq...");
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are a technical interviewer. Ask a specific question connecting the candidate's resume projects/skills to the job description. Return ONLY a JSON object: { \"question\": string, \"topic\": string, \"difficulty\": string }."
+        },
+        {
+          role: "user",
+          content: `Resume Text: ${resumeText}\n\nJob Description: ${jobDescription}`
+        }
+      ],
+      model: "llama-3.3-70b-versatile", // Using the latest versatile model
+      response_format: { type: "json_object" },
+    });
+
+    const responseContent = chatCompletion.choices[0]?.message?.content;
+    console.log(" Groq response received:", responseContent);
+    
+    // Parse the JSON response from Groq using the helper for robustness
+    let result;
+    try {
+      result = cleanAndParseJSON(responseContent, false);
+      console.log(" JSON parsed successfully:", result);
+    } catch (parseError) {
+      console.error(" Groq JSON Parse Error:", parseError);
+      throw new Error("Failed to parse AI response");
+    }
+
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(" Temporary file deleted.");
+    }
+
+    return res.status(200).json(result);
+
+  } catch (error) {
+    console.error(" Error in generateResumeQuestion:", error);
+
+    // Clean up file even on error
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(" Temporary file deleted after error.");
+    }
+
+    // Demo-Safe Error Handling: If anything fails, return a "Safe Fallback" question
+    // so the exhibition demo continues smoothly without showing a raw error to the user.
+    console.log("Returning fallback question.");
+    return res.status(200).json({
+      question: "Can you walk me through one of the most challenging technical projects listed on your resume and how it relates to the requirements of this role?",
+      topic: "General Experience",
+      difficulty: "Medium"
+    });
   }
 };

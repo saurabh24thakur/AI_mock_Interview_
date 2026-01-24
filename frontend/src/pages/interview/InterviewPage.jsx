@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useOptimistic } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { serverURL } from "../../App";
@@ -23,6 +23,10 @@ function InterviewPage() {
   const [jobRole, setJobRole] = useState(location.state?.jobRole || "General");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [completedQuestions, setCompletedQuestions] = useState([]);
+  const [optimisticCompletedQuestions, addOptimisticCompletedQuestion] = useOptimistic(
+    completedQuestions,
+    (state, newQuestion) => [...state, newQuestion]
+  );
   const [answers, setAnswers] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const isRecordingRef = useRef(false); // Ref to track state in event listeners
@@ -83,7 +87,7 @@ function InterviewPage() {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; 
+      recognition.continuous = true; 
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
@@ -98,7 +102,7 @@ function InterviewPage() {
 
       recognition.onsoundend = () => {
           console.log("🔇 Sound Ended");
-          setIsSpeaking(false);
+          // We don't set isSpeaking to false immediately to allow for natural pauses
       };
 
       recognition.onresult = (event) => {
@@ -124,7 +128,8 @@ function InterviewPage() {
         
         setIsSpeaking(true);
         clearTimeout(recognition.speakingTimeout);
-        recognition.speakingTimeout = setTimeout(() => setIsSpeaking(false), 1000);
+        // Wait for 5 seconds of silence before stopping the "speaking" animation
+        recognition.speakingTimeout = setTimeout(() => setIsSpeaking(false), 5000);
       };
 
       recognition.onerror = (event) => {
@@ -326,6 +331,9 @@ function InterviewPage() {
       const finalAnswer = (transcriptRef.current + interimTranscriptRef.current).trim() || "No answer provided.";
       console.log("Submitting Answer:", finalAnswer); // Debug log
 
+      // Optimistic Update: Instantly add to completed list with a "Processing" indicator
+      addOptimisticCompletedQuestion({ text: questions[currentQuestionIndex], isOptimistic: true });
+
       const { data } = await axios.post(
         `${serverURL}/api/interviews/analyze`,
         {
@@ -362,6 +370,7 @@ function InterviewPage() {
       console.error(err);
       setFluency("Error during analysis.");
       setCorrectness("Error during analysis.");
+      alert("Failed to analyze answer. Please try again.");
     } finally {
       setIsAnalyzing(false);
       updateIsRecording(false);
@@ -607,19 +616,22 @@ function InterviewPage() {
           <h2 className="mb-4 text-sm font-semibold text-gray-500 uppercase tracking-widest">Completed</h2>
           <ul className="space-y-3">
             <AnimatePresence>
-              {completedQuestions.map((q, i) => (
+              {optimisticCompletedQuestions.map((q, i) => (
                 <motion.li
                   key={i}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-start gap-3 rounded-lg p-2 text-sm text-gray-400 transition-colors hover:bg-white/5"
                 >
-                  <FiCheckCircle className="mt-0.5 min-w-[16px] text-white/70" />
-                  <span className="line-through decoration-gray-600">{q}</span>
+                  <FiCheckCircle className={`mt-0.5 min-w-[16px] ${q.isOptimistic ? "text-yellow-400 animate-pulse" : "text-white/70"}`} />
+                  <span className={`line-through decoration-gray-600 ${q.isOptimistic ? "text-gray-500 italic" : ""}`}>
+                    {typeof q === 'string' ? q : q.text}
+                    {q.isOptimistic && <span className="ml-2 text-xs not-italic text-yellow-500">(Processing...)</span>}
+                  </span>
                 </motion.li>
               ))}
             </AnimatePresence>
-            {completedQuestions.length === 0 && (
+            {optimisticCompletedQuestions.length === 0 && (
               <p className="text-xs text-gray-600 italic">No questions completed yet.</p>
             )}
           </ul>

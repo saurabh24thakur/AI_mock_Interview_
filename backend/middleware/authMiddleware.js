@@ -9,12 +9,12 @@ const protect = async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     try {
-      console.log("Authorization Header:", req.headers.authorization); // Logging header
+      // console.log("Authorization Header:", req.headers.authorization); 
       token = req.headers.authorization.split(" ")[1];
-      console.log("Extracted Token:", token); // Logging token
+      // console.log("Extracted Token:", token); 
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("Decoded Token:", decoded); // Logging decoded payload
+      // console.log("Decoded Token:", decoded); 
 
       req.user = await User.findById(decoded.id).select("-password");
 
