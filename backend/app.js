@@ -11,36 +11,18 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 connectDB();
 
 const app = express();
-
 // Middleware
-// const allowedOrigins = [
-//   'https://ai-mock-interview-frontend-2.pages.dev',
-//   'http://localhost:5173',
-//   'http://localhost:5174'
-// ];
+const allowedOrigins = [
+  'https://ai-mock-interview-frontend-2.pages.dev',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ai-nterview-backend.onrender.com'
+];
 
-// app.use(cors({
-//   origin: function (origin, callback) {
-
-//     if (!origin) return callback(null, true);
-
-//     const isAllowed = allowedOrigins.some(allowedOrigin => {
-//       if (typeof allowedOrigin === 'string') {
-//         return allowedOrigin === origin;
-//       }
-//       if (allowedOrigin instanceof RegExp) {
-//         return allowedOrigin.test(origin);
-//       }
-//       return false;
-//     });
-
-//     if (isAllowed) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   }
-// }));
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 
 app.use(express.json());
