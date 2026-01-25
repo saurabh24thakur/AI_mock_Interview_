@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AddInterview from '../../component/AddInterview';
 import { useNavigate } from 'react-router-dom';
 import DynamicBackground from '../../component/DynamicBackground';
-import { FiArrowRight, FiArrowDown, FiCpu, FiBarChart2, FiFileText, FiCheck, FiActivity } from 'react-icons/fi';
+import { FiArrowRight, FiArrowDown, FiCpu, FiBarChart2, FiFileText, FiCheck, FiActivity, FiUsers, FiAward, FiTrendingUp } from 'react-icons/fi';
 
 // --- Floating Node Component ---
 const FloatingNode = ({ label, value, x, y, delay }) => (
@@ -47,6 +47,21 @@ function LandingPage() {
   const navigate = useNavigate();
   const isLoggedIn =
     !!localStorage.getItem("token") || !!localStorage.getItem("user");
+
+  const steps = [
+    { id: '01', title: 'AI Analysis', desc: 'Deep scan of your responses', icon: <FiCpu /> },
+    { id: '02', title: 'Real-time Feedback', desc: 'Instant suggestions during practice', icon: <FiActivity /> },
+    { id: '03', title: 'Performance Report', desc: 'Detailed breakdown of your strengths', icon: <FiBarChart2 /> },
+    { id: '04', title: 'Personalized Roadmap', desc: 'Custom path to improvement', icon: <FiFileText /> },
+  ];
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentStep((prev) => (prev + 1) % steps.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleStartInterviewClick = () => {
     if (isLoggedIn) {
@@ -175,7 +190,7 @@ function LandingPage() {
         </div>
       </div>
 
-      {/* --- CARD 2: FEATURES SECTION (Redesigned "DeFi Wallet" Style) --- */}
+      {/* --- CARD 2: FEATURES SECTION --- */}
       <div className="mx-4 mb-4 relative rounded-[3rem] overflow-hidden border border-white/10 bg-black">
         <section className="py-20 px-6 md:px-10 relative z-10 min-h-screen flex flex-col justify-center">
           
@@ -254,6 +269,26 @@ function LandingPage() {
                   </div>
                </motion.div>
 
+               {/* New Floating Card: Confidence */}
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                  animate={{ x: [0, 15, 0] }}
+                  className="absolute top-1/2 right-0 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md hidden md:block"
+               >
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                        <FiTrendingUp className="text-white" />
+                     </div>
+                     <div>
+                        <p className="text-white font-bold">Confidence</p>
+                        <p className="text-gray-400 text-xs">+42% Growth</p>
+                     </div>
+                  </div>
+               </motion.div>
+
                {/* Connecting Lines (Decorative) */}
                <div className="absolute bottom-10 left-1/2 w-[1px] h-20 bg-gradient-to-b from-white/20 to-transparent" />
             </motion.div>
@@ -268,30 +303,32 @@ function LandingPage() {
             >
                {/* Radial Circle */}
                <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border border-white/5 relative flex items-center justify-center">
-                  {/* Progress Arc (Simulated with border) */}
+                  {/* Progress Arc */}
                   <motion.div 
                     className="absolute inset-0 rounded-full border-t-4 border-r-4 border-white/80"
-                    initial={{ rotate: 0 }}
-                    whileInView={{ rotate: 45 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   />
                   <div className="absolute inset-4 rounded-full border border-white/5" />
                   
-                  {/* Inner Content */}
-                  <motion.div 
-                    className="text-center z-10"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 }}
-                  >
-                     <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">
-                        <FiCpu />
-                     </div>
-                     <h4 className="text-2xl font-bold text-white">Step 01</h4>
-                     <p className="text-gray-500 text-sm">AI Analysis</p>
-                  </motion.div>
+                  {/* Inner Content - Cycling Steps */}
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={currentStep}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.5 }}
+                      className="text-center z-10 px-6"
+                    >
+                       <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                          {steps[currentStep].icon}
+                       </div>
+                       <h4 className="text-2xl font-bold text-white">Step {steps[currentStep].id}</h4>
+                       <p className="text-gray-400 text-sm font-medium">{steps[currentStep].title}</p>
+                       <p className="text-gray-600 text-[10px] mt-1 uppercase tracking-widest leading-tight">{steps[currentStep].desc}</p>
+                    </motion.div>
+                  </AnimatePresence>
 
                   {/* Radial Glow */}
                   <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full -z-10" />
@@ -307,7 +344,7 @@ function LandingPage() {
 
           </div>
 
-          {/* Bottom Tags (Floating Pills) */}
+          {/* Bottom Tags */}
           <div className="mt-20 flex flex-wrap justify-center gap-4 md:gap-8">
              {['2.7k Questions', 'Success', 'Personalized Learning', 'Smart Feedback', 'Career Growth', 'AI Revolution'].map((tag, i) => (
                 <motion.div
@@ -325,6 +362,56 @@ function LandingPage() {
           </div>
 
         </section>
+      </div>
+
+      {/* --- CARD 3: GLOBAL STATS SECTION --- */}
+      <div className="mx-4 mb-4 relative rounded-[3rem] overflow-hidden border border-white/10 bg-black py-24">
+         <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-24">
+               {[
+                  { label: 'Active Users', value: '12k+', icon: <FiUsers /> },
+                  { label: 'Interviews Held', value: '50k+', icon: <FiActivity /> },
+                  { label: 'Success Rate', value: '94%', icon: <FiAward /> },
+                  { label: 'AI Models', value: 'Llama 3', icon: <FiCpu /> }
+               ].map((stat, i) => (
+                  <motion.div 
+                     key={i}
+                     initial={{ opacity: 0, y: 20 }}
+                     whileInView={{ opacity: 1, y: 0 }}
+                     viewport={{ once: true }}
+                     transition={{ delay: i * 0.1 }}
+                     className="text-center group"
+                  >
+                     <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center mx-auto mb-4 text-gray-400 group-hover:text-white group-hover:border-white/30 transition-all">
+                        {stat.icon}
+                     </div>
+                     <p className="text-gray-500 text-xs mb-1 uppercase tracking-widest">{stat.label}</p>
+                     <h3 className="text-4xl md:text-6xl font-bold text-white">{stat.value}</h3>
+                  </motion.div>
+               ))}
+            </div>
+
+            {/* Premium Quote Section */}
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 1 }}
+               className="p-12 md:p-20 rounded-[3rem] bg-gradient-to-br from-white/5 to-transparent border border-white/10 text-center relative overflow-hidden"
+            >
+               <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+               <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 relative z-10 italic leading-tight">
+                  "The best way to predict your future is to create it."
+               </h3>
+               <p className="text-gray-400 text-xl relative z-10">— Abraham Lincoln</p>
+               
+               <div className="mt-12 flex justify-center gap-4 relative z-10">
+                  <div className="w-2 h-2 bg-white rounded-full" />
+                  <div className="w-2 h-2 bg-white/20 rounded-full" />
+                  <div className="w-2 h-2 bg-white/20 rounded-full" />
+               </div>
+            </motion.div>
+         </div>
       </div>
 
       {/* FOOTER */}
