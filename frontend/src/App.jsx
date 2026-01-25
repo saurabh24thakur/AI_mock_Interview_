@@ -9,6 +9,8 @@ import Navbar from './component/Navbar'
 import Dashboard from './pages/dashboard/DashBoard';
 import AddInterview from './component/AddInterview';
 import InterviewPage from './pages/interview/InterviewPage';
+
+
 export const serverURL="https://mockmatebackend.vercel.app";
 
 //export const serverURL="http://localhost:3000";
@@ -27,8 +29,7 @@ function Layout() {
 function App() {
   return (
     <Routes>
-      {/* Wrap all routes inside Layout */}
-      {/* Auth Routes - Wrapped in AuthLayout */}
+    
       <Route element={<AuthLayout />}>
         <Route path="signup" element={<Signup />} />
         <Route path="login" element={<Login />} />
@@ -45,4 +46,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
