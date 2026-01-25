@@ -16,7 +16,7 @@ const allowedOrigins = [
   'https://ai-mock-interview-frontend-2.pages.dev',
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://ai-nterview-backend.onrender.com'
+  'https://mockmatebackend.vercel.app'
 ];
 
 app.use(cors({
