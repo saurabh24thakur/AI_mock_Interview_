@@ -1,6 +1,5 @@
 
 import Interview from "../models/Interview.js";
-import OpenAI from "openai";
 import InterviewSession from "../models/interviewSession.model.js";
 import generateFeedback from "../utils/feedbackGenerator.js"; 
 import Groq from "groq-sdk";
@@ -9,37 +8,29 @@ const require = createRequire(import.meta.url);
 const pdf = require('pdf-parse');
 import fs from "fs";
 
-// ==================== OPENROUTER SETUP ====================
-const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: apiKey || "dummy-key-to-prevent-crash", // Fallback to prevent startup crash
-});
-
 // ==================== GROQ SETUP ====================
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// Helper: Retry mechanism for Rate Limits / Errors
-async function generateWithRetry(messages, retries = 3) {
-  if (!apiKey || apiKey === "dummy-key-to-prevent-crash") {
-      throw new Error("OpenRouter API Key is missing. Please add OPENROUTER_API_KEY to your .env file.");
+// Helper: Generate with Groq (Cost-Effective & Fast)
+async function generateWithGroq(messages, retries = 2) {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is missing. Please add it to your .env file.");
   }
 
   for (let i = 0; i <= retries; i++) {
     try {
-      const completion = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini", 
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.1-8b-instant",
         messages: messages,
-        response_format: { type: "json_object" }, 
+        response_format: { type: "json_object" },
       });
       return completion.choices[0].message.content;
     } catch (error) {
       if ((error.status === 429 || error.status === 503) && i < retries) {
-        const delay = 2000 * (i + 1); 
-        console.warn(`Rate limit/Error hit (${error.status}). Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
+        const delay = 1000 * (i + 1);
+        console.warn(`Groq Rate Limit hit. Retrying in ${delay / 1000}s...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
         throw error;
@@ -88,13 +79,40 @@ export const saveInterview = async (req, res) => {
       status,
     } = req.body;
 
-    // Generate feedback based on scores
-    const feedback = generateFeedback({
-      fluency: finalFluencyScore,
-      confidence: finalConfidenceScore,
-      correctness: finalCorrectnessScore,
-      bodyLanguage: finalBodyLanguageScore,
-    });
+    // Generate AI feedback based on answers
+    let feedback = "";
+    try {
+      const feedbackPrompt = `
+        You are an expert technical interviewer. Based on the following interview results, provide a concise (3-4 sentences) personalized summary of the candidate's performance, highlighting strengths and areas for improvement.
+        
+        Job Role: ${jobRole}
+        Overall Score: ${overallScore}
+        Answers: ${JSON.stringify(answers)}
+        
+        Return ONLY a JSON object: { "summary": "your feedback summary here" }
+      `;
+      
+      const rawFeedback = await generateWithGroq([
+        { role: "system", content: "You are a helpful AI interviewer that outputs JSON." },
+        { role: "user", content: feedbackPrompt }
+      ]);
+      
+      const parsedFeedback = cleanAndParseJSON(rawFeedback, false);
+      feedback = parsedFeedback.summary || generateFeedback({
+        fluency: finalFluencyScore,
+        confidence: finalConfidenceScore,
+        correctness: finalCorrectnessScore,
+        bodyLanguage: finalBodyLanguageScore,
+      });
+    } catch (e) {
+      console.error("Failed to generate AI feedback summary:", e);
+      feedback = generateFeedback({
+        fluency: finalFluencyScore,
+        confidence: finalConfidenceScore,
+        correctness: finalCorrectnessScore,
+        bodyLanguage: finalBodyLanguageScore,
+      });
+    }
 
     const session = await InterviewSession.create({
       user: userId,
@@ -149,7 +167,7 @@ async function performAnalysis(question, transcript) {
   `;
 
   try {
-    const rawText = await generateWithRetry([
+    const rawText = await generateWithGroq([
         { role: "system", content: "You are a helpful AI interviewer that outputs JSON." },
         { role: "user", content: prompt }
     ]);
@@ -213,13 +231,13 @@ export const generateQuestions = async (req, res) => {
       Output ONLY JSON array of strings containing that single question.
     `;
 
-    //  Generate with OpenRouter
-    const raw = await generateWithRetry([
+    //  Generate with Groq
+    const raw = await generateWithGroq([
         { role: "system", content: "You are a helpful AI assistant that outputs JSON." },
         { role: "user", content: prompt }
     ]);
 
-    console.log("🔹 LLM raw output (generateQuestions):", raw);
+    console.log("🔹 Groq raw output (generateQuestions):", raw);
 
     let questionsArray;
     try {
@@ -269,13 +287,13 @@ export const generateQuestionsFromJD = async (req, res) => {
       Output ONLY a JSON array of strings containing that single question. Example: ["Question 1"]
     `;
 
-    // Call OpenRouter
-    const raw = await generateWithRetry([
+    // Call Groq
+    const raw = await generateWithGroq([
         { role: "system", content: "You are a helpful AI assistant that outputs JSON." },
         { role: "user", content: prompt }
     ]);
 
-    console.log("🔹 AI raw output (generateQuestionsFromJD):", raw);
+    console.log("🔹 Groq raw output (generateQuestionsFromJD):", raw);
 
     let questionsArray;
     try {
@@ -352,7 +370,7 @@ export const generateResumeQuestion = async (req, res) => {
           content: `Resume Text: ${resumeText}\n\nJob Description: ${jobDescription}`
         }
       ],
-      model: "llama-3.3-70b-versatile", // Using the latest versatile model
+      model: "llama-3.1-8b-instant", 
       response_format: { type: "json_object" },
     });
 
