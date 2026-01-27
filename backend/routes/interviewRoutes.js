@@ -10,8 +10,9 @@ import {
 import protect from "../middleware/authMiddleware.js";
 import multer from "multer";
 
-// Configure multer for temporary file storage
-const upload = multer({ dest: "uploads/" });
+// Configure multer for memory storage (Vercel has a read-only filesystem)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const router = express.Router();
 

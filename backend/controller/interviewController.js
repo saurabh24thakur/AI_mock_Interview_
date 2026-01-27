@@ -323,8 +323,7 @@ export const generateQuestionsFromJD = async (req, res) => {
 // ==================== GENERATE RESUME-BASED QUESTION ====================
 
 export const generateResumeQuestion = async (req, res) => {
-  const filePath = req.file?.path;
-  console.log("generateResumeQuestion started. File path:", filePath);
+  console.log("generateResumeQuestion started.");
 
   try {
     const { jobDescription } = req.body;
@@ -342,9 +341,8 @@ export const generateResumeQuestion = async (req, res) => {
 
     let resumeText = "";
     try {
-      console.log("Reading PDF file...");
-      const dataBuffer = fs.readFileSync(req.file.path);
-      const data = await pdf(dataBuffer);
+      console.log("Reading PDF from buffer...");
+      const data = await pdf(req.file.buffer);
       resumeText = data.text;
       console.log(" PDF parsed successfully. Text length:", resumeText.length);
     } catch (pdfError) {
@@ -387,21 +385,10 @@ export const generateResumeQuestion = async (req, res) => {
       throw new Error("Failed to parse AI response");
     }
 
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(" Temporary file deleted.");
-    }
-
     return res.status(200).json(result);
 
   } catch (error) {
     console.error(" Error in generateResumeQuestion:", error);
-
-    // Clean up file even on error
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(" Temporary file deleted after error.");
-    }
 
     // Demo-Safe Error Handling: If anything fails, return a "Safe Fallback" question
     // so the exhibition demo continues smoothly without showing a raw error to the user.
