@@ -152,10 +152,17 @@ export const getUserInterviews = async (req, res) => {
 // ==================== ANALYZE TEXT ANSWER ====================
 async function performAnalysis(question, transcript) {
   const prompt = `
-    You are an AI interviewer. Evaluate the following answer.
+    You are a strict and professional AI technical interviewer. Evaluate the following answer critically.
     
     Question: ${question}
     Answer: ${transcript}
+    
+    Scoring Rubric (0-100):
+    - 0: No answer, completely irrelevant (e.g., "I don't know", "pizza"), or gibberish.
+    - 1-30: Poor. Major misunderstandings, very brief, or lacks any technical depth.
+    - 31-60: Fair. Basic understanding but lacks detail, has some inaccuracies, or poor communication.
+    - 61-85: Good. Solid understanding, mostly correct, clear communication.
+    - 86-100: Excellent. Comprehensive, accurate, professional, and insightful.
     
     Provide the output in the following JSON format ONLY:
     {
@@ -168,7 +175,7 @@ async function performAnalysis(question, transcript) {
 
   try {
     const rawText = await generateWithGroq([
-        { role: "system", content: "You are a helpful AI interviewer that outputs JSON." },
+        { role: "system", content: "You are a critical AI interviewer that outputs JSON. You do not give high scores for poor or irrelevant answers." },
         { role: "user", content: prompt }
     ]);
 
@@ -179,8 +186,8 @@ async function performAnalysis(question, transcript) {
     return {
       fluency: "Could not analyze fluency.",
       correctness: "Could not analyze correctness.",
-      fluencyScore: 50,
-      correctnessScore: 50
+      fluencyScore: 0,
+      correctnessScore: 0
     };
   }
 }
@@ -373,7 +380,7 @@ export const generateResumeQuestion = async (req, res) => {
     });
 
     const responseContent = chatCompletion.choices[0]?.message?.content;
-    console.log(" Groq response received:", responseContent);
+    console.log("Groq response received:", responseContent);
     
     // Parse the JSON response from Groq using the helper for robustness
     let result;
@@ -390,8 +397,7 @@ export const generateResumeQuestion = async (req, res) => {
   } catch (error) {
     console.error(" Error in generateResumeQuestion:", error);
 
-    // Demo-Safe Error Handling: If anything fails, return a "Safe Fallback" question
-    // so the exhibition demo continues smoothly without showing a raw error to the user.
+    
     console.log("Returning fallback question.");
     return res.status(200).json({
       question: "Can you walk me through one of the most challenging technical projects listed on your resume and how it relates to the requirements of this role?",
