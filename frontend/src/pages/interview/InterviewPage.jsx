@@ -351,8 +351,8 @@ function InterviewPage() {
           question: questions[currentQuestionIndex],
           fluency: data.analysis.fluency,
           correctness: data.analysis.correctness,
-          fluencyScore: data.analysis.fluencyScore || 70,
-          correctnessScore: data.analysis.correctnessScore || 70,
+          fluencyScore: data.analysis.fluencyScore ?? 70,
+          correctnessScore: data.analysis.correctnessScore ?? 70,
         },
       ]);
       setCompletedQuestions((prev) => [...prev, questions[currentQuestionIndex]]);
@@ -383,7 +383,7 @@ function InterviewPage() {
       const token = userInfo ? userInfo.token : null;
       if (!token) return;
       const overallScore = Math.round(
-        answers.reduce((sum, a) => sum + (a.correctnessScore || 70), 0) /
+        answers.reduce((sum, a) => sum + (a.correctnessScore ?? 70), 0) /
           answers.length
       );
       await axios.post(
@@ -394,12 +394,12 @@ function InterviewPage() {
           answers,
           overallScore,
           finalFluencyScore: Math.round(
-            answers.reduce((s, a) => s + (a.fluencyScore || 70), 0) /
+            answers.reduce((s, a) => s + (a.fluencyScore ?? 70), 0) /
               answers.length
           ),
           finalConfidenceScore: 75,
           finalCorrectnessScore: Math.round(
-            answers.reduce((s, a) => s + (a.correctnessScore || 70), 0) /
+            answers.reduce((s, a) => s + (a.correctnessScore ?? 70), 0) /
               answers.length
           ),
           finalBodyLanguageScore: 80,
