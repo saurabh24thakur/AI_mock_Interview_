@@ -18,6 +18,7 @@ export const serverURL="https://mockmatebackend.vercel.app";
 
 import InterviewSetup from "./pages/InterviewSetup/InterviewSetup"; 
 import AuthLayout from './component/AuthLayout';
+import Contact from './pages/contact/Contact';
 function Layout() {
   return (
     <>
@@ -42,6 +43,7 @@ function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="interview" element={<InterviewPage />} />
         <Route path="interview-setup" element={<InterviewSetup />} />
+        <Route path="contact" element={<Contact />} />
       </Route>
     </Routes>
   )

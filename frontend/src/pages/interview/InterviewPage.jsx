@@ -19,6 +19,7 @@ function InterviewPage() {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [fluency, setFluency] = useState("Waiting for your response...");
   const [correctness, setCorrectness] = useState("Waiting for your response...");
+  const [confidence, setConfidence] = useState("Waiting for your response...");
   const [questions, setQuestions] = useState(location.state?.questions || []);
   const [jobRole, setJobRole] = useState(location.state?.jobRole || "General");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -316,6 +317,7 @@ function InterviewPage() {
     setStatusText("Analyzing your response...");
     setFluency("Analyzing...");
     setCorrectness("Analyzing...");
+    setConfidence("Analyzing...");
 
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -345,6 +347,7 @@ function InterviewPage() {
 
       setFluency(data.analysis.fluency || "Analysis complete.");
       setCorrectness(data.analysis.correctness || "Analysis complete.");
+      setConfidence(data.analysis.confidence || "Analysis complete.");
       setAnswers((prev) => [
         ...prev,
         {
@@ -353,6 +356,7 @@ function InterviewPage() {
           correctness: data.analysis.correctness,
           fluencyScore: data.analysis.fluencyScore ?? 70,
           correctnessScore: data.analysis.correctnessScore ?? 70,
+          confidenceScore: data.analysis.confidenceScore ?? 70,
         },
       ]);
       setCompletedQuestions((prev) => [...prev, questions[currentQuestionIndex]]);
@@ -370,6 +374,7 @@ function InterviewPage() {
       console.error(err);
       setFluency("Error during analysis.");
       setCorrectness("Error during analysis.");
+      setConfidence("Error during analysis.");
       alert("Failed to analyze answer. Please try again.");
     } finally {
       setIsAnalyzing(false);
@@ -397,7 +402,10 @@ function InterviewPage() {
             answers.reduce((s, a) => s + (a.fluencyScore ?? 70), 0) /
               answers.length
           ),
-          finalConfidenceScore: 75,
+          finalConfidenceScore: Math.round(
+            answers.reduce((s, a) => s + (a.confidenceScore ?? 70), 0) /
+              answers.length
+          ),
           finalCorrectnessScore: Math.round(
             answers.reduce((s, a) => s + (a.correctnessScore ?? 70), 0) /
               answers.length

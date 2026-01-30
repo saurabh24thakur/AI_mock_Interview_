@@ -168,8 +168,10 @@ async function performAnalysis(question, transcript) {
     {
       "fluency": "Brief evaluation of fluency (2-3 sentences)",
       "correctness": "Brief evaluation of correctness (2-3 sentences)",
+      "confidence": "Brief evaluation of confidence based on tone and clarity (2-3 sentences)",
       "fluencyScore": <number 0-100>,
-      "correctnessScore": <number 0-100>
+      "correctnessScore": <number 0-100>,
+      "confidenceScore": <number 0-100>
     }
   `;
 
@@ -186,8 +188,10 @@ async function performAnalysis(question, transcript) {
     return {
       fluency: "Could not analyze fluency.",
       correctness: "Could not analyze correctness.",
+      confidence: "Could not analyze confidence.",
       fluencyScore: 0,
-      correctnessScore: 0
+      correctnessScore: 0,
+      confidenceScore: 0
     };
   }
 }
@@ -244,7 +248,7 @@ export const generateQuestions = async (req, res) => {
         { role: "user", content: prompt }
     ]);
 
-    console.log("🔹 Groq raw output (generateQuestions):", raw);
+    console.log("Groq raw output (generateQuestions):", raw);
 
     let questionsArray;
     try {
