@@ -44,7 +44,6 @@ Follow these steps to set up the project locally.
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/saurabh24thakur/AI_mock_Interview_.git
-
 ```
 
 ### 2. Backend Setup
@@ -74,22 +73,22 @@ cd frontend
 npm install
 ```
 
-Create a `.env` file in the `frontend` directory (optional, if you need to override the backend URL):
-```env
-VITE_SERVER_URL=http://localhost:5000
-```
-*Note: The backend URL is currently hardcoded in `src/App.jsx` as `serverURL`. You may want to update this to use `import.meta.env.VITE_SERVER_URL` for flexibility.*
-
 Start the frontend development server:
 ```bash
 npm run dev
 ```
 
-### 4. Access the App
-Open your browser and navigate to:
-```
-http://localhost:5173
-```
+## 📖 API Documentation
+
+The backend API is documented using the OpenAPI Specification (OAS). You can find the specification file at:
+-   [OpenAPI Specification (YAML)](./backend/openapi.yaml)
+
+To view the documentation in a user-friendly way, you can paste the contents of `backend/openapi.yaml` into the [Swagger Editor](https://editor.swagger.io/) or use a VS Code extension like "OpenAPI (Swagger) Editor".
+
+### Key Endpoints
+-   **Users**: `POST /api/users/signup`, `POST /api/users/login`, `GET /api/users/profile`
+-   **Interviews**: `POST /api/interviews/generate-questions`, `POST /api/interviews/analyze`, `POST /api/interviews/save`, `GET /api/interviews`
+-   **Dashboard**: `GET /api/dashboard`
 
 ## 📂 Project Structure
 
@@ -101,6 +100,7 @@ ai_interview/
 │   ├── models/             # Mongoose Models (User, Interview, etc.)
 │   ├── routes/             # API Routes
 │   ├── utils/              # Helper functions (AI analysis, etc.)
+│   ├── openapi.yaml        # API Documentation (OpenAPI Spec)
 │   └── app.js              # Entry point
 │
 └── frontend/               # React Frontend
@@ -120,3 +120,4 @@ Contributions are welcome! Please fork the repository and submit a pull request 
 ## 📄 License
 
 This project is licensed under the ISC License.
+

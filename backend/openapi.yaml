@@ -1,0 +1,339 @@
+openapi: 3.0.3
+info:
+  title: Procoder - AI Mock Interview API
+  description: API documentation for the Procoder platform, an AI-powered mock interview application.
+  version: 1.0.0
+servers:
+  - url: https://ai-nterview-backend.onrender.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Enter your JWT token in the format: Bearer <token>"
+  schemas:
+    User:
+      type: object
+      description: User profile information
+      properties:
+        _id:
+          type: string
+          example: "60d0fe4f5311236168a109ca"
+        name:
+          type: string
+          example: "John Doe"
+        username:
+          type: string
+          example: "johndoe123"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        role:
+          type: string
+          enum: [user, admin]
+          default: "user"
+        jobExperience:
+          type: number
+          description: Years of job experience
+          example: 3
+        expertise:
+          type: array
+          items:
+            type: string
+          example: ["React", "Node.js", "Python"]
+        bio:
+          type: string
+          example: "Full stack developer with a passion for AI."
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    InterviewSession:
+      type: object
+      description: Details of an AI interview session
+      properties:
+        _id:
+          type: string
+          example: "60d0fe4f5311236168a109cb"
+        user:
+          type: string
+          description: ID of the user who took the interview
+          example: "60d0fe4f5311236168a109ca"
+        jobRole:
+          type: string
+          example: "Frontend Developer"
+        difficulty:
+          type: string
+          example: "Medium"
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Answer'
+        overallScore:
+          type: number
+          example: 85
+        finalFluencyScore:
+          type: number
+          example: 90
+        finalConfidenceScore:
+          type: number
+          example: 80
+        finalCorrectnessScore:
+          type: number
+          example: 85
+        finalBodyLanguageScore:
+          type: number
+          example: 75
+        feedback:
+          type: string
+          example: "Great performance! Focus on explaining your architectural decisions more clearly."
+        status:
+          type: string
+          enum: [in-progress, completed]
+          default: "completed"
+        createdAt:
+          type: string
+          format: date-time
+    Answer:
+      type: object
+      description: User response to a specific interview question with AI analysis
+      properties:
+        question:
+          type: string
+          example: "What is the difference between virtual DOM and real DOM?"
+        fluency:
+          type: string
+          example: "Very fluent"
+        correctness:
+          type: string
+          example: "Accurate"
+        confidence:
+          type: string
+          example: "Confident"
+        bodyLanguage:
+          type: string
+          example: "Good eye contact"
+        fluencyScore:
+          type: number
+          example: 9
+        correctnessScore:
+          type: number
+          example: 8
+        confidenceScore:
+          type: number
+          example: 9
+        bodyLanguageScore:
+          type: number
+          example: 7
+paths:
+  /api/users/signup:
+    post:
+      tags:
+        - Users
+      summary: Register a new user
+      description: Creates a new user account with the provided details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, username, email, password]
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                username:
+                  type: string
+                  example: "johndoe123"
+                email:
+                  type: string
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '201':
+          description: User created successfully
+        '400':
+          description: Invalid input or user already exists
+  /api/users/login:
+    post:
+      tags:
+        - Users
+      summary: Log in a user
+      description: Authenticates a user and returns a JSON Web Token (JWT).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful, returns JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid email or password
+  /api/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get logged-in user profile
+      description: Retrieves the profile information of the currently authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+  /api/interviews/generate-questions:
+    post:
+      tags:
+        - Interviews
+      summary: Generate interview questions
+      description: Uses AI to generate a list of interview questions based on the job role, experience level, and difficulty.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobRole, experience]
+              properties:
+                jobRole:
+                  type: string
+                  example: "MERN Stack Developer"
+                experience:
+                  type: string
+                  example: "2 years"
+                difficulty:
+                  type: string
+                  example: "Intermediate"
+      responses:
+        '200':
+          description: List of generated questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: "Explain the architecture of a Node.js application."
+  /api/interviews/analyze:
+    post:
+      tags:
+        - Interviews
+      summary: Analyze a user's answer
+      description: Sends the user's answer to the AI engine for real-time analysis across multiple metrics.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, answer]
+              properties:
+                question:
+                  type: string
+                  example: "What are Hooks in React?"
+                answer:
+                  type: string
+                  example: "Hooks are functions that let you use state and other React features without writing a class."
+      responses:
+        '200':
+          description: Analysis of the answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+  /api/interviews/save:
+    post:
+      tags:
+        - Interviews
+      summary: Save an interview session
+      description: Persists the completed interview session and its results to the database.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InterviewSession'
+      responses:
+        '201':
+          description: Interview session saved successfully
+  /api/interviews:
+    get:
+      tags:
+        - Interviews
+      summary: Get user interviews
+      description: Retrieves all past interview sessions for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of interview sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InterviewSession'
+  /api/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard analytics
+      description: Retrieves aggregated performance data for the authenticated user to visualize progress.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalInterviews:
+                    type: number
+                    example: 5
+                  averageScore:
+                    type: number
+                    example: 78
+                  skillBreakdown:
+                    type: object
+                    example: { "Fluency": 82, "Confidence": 75, "Correctness": 80 }

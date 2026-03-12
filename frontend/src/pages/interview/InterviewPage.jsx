@@ -354,9 +354,9 @@ function InterviewPage() {
           question: questions[currentQuestionIndex],
           fluency: data.analysis.fluency,
           correctness: data.analysis.correctness,
-          fluencyScore: data.analysis.fluencyScore ?? 70,
-          correctnessScore: data.analysis.correctnessScore ?? 70,
-          confidenceScore: data.analysis.confidenceScore ?? 70,
+          fluencyScore: data.analysis.fluencyScore ?? 0,
+          correctnessScore: data.analysis.correctnessScore ?? 0,
+          confidenceScore: data.analysis.confidenceScore ?? 0,
         },
       ]);
       setCompletedQuestions((prev) => [...prev, questions[currentQuestionIndex]]);
@@ -386,11 +386,17 @@ function InterviewPage() {
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const token = userInfo ? userInfo.token : null;
-      if (!token) return;
-      const overallScore = Math.round(
-        answers.reduce((sum, a) => sum + (a.correctnessScore ?? 70), 0) /
-          answers.length
-      );
+      const totalFluency = answers.reduce((s, a) => s + (a.fluencyScore ?? 0), 0);
+      const totalConfidence = answers.reduce((s, a) => s + (a.confidenceScore ?? 0), 0);
+      const totalCorrectness = answers.reduce((s, a) => s + (a.correctnessScore ?? 0), 0);
+      const numAnswers = answers.length || 1;
+
+      const finalFluencyScore = Math.round(totalFluency / numAnswers);
+      const finalConfidenceScore = Math.round(totalConfidence / numAnswers);
+      const finalCorrectnessScore = Math.round(totalCorrectness / numAnswers);
+      
+      const overallScore = Math.round((finalFluencyScore + finalConfidenceScore + finalCorrectnessScore) / 3);
+
       await axios.post(
         `${serverURL}/api/interviews/save`,
         {
@@ -398,18 +404,9 @@ function InterviewPage() {
           difficulty: "Medium",
           answers,
           overallScore,
-          finalFluencyScore: Math.round(
-            answers.reduce((s, a) => s + (a.fluencyScore ?? 70), 0) /
-              answers.length
-          ),
-          finalConfidenceScore: Math.round(
-            answers.reduce((s, a) => s + (a.confidenceScore ?? 70), 0) /
-              answers.length
-          ),
-          finalCorrectnessScore: Math.round(
-            answers.reduce((s, a) => s + (a.correctnessScore ?? 70), 0) /
-              answers.length
-          ),
+          finalFluencyScore,
+          finalConfidenceScore,
+          finalCorrectnessScore,
           finalBodyLanguageScore: 80,
           status: "completed",
         },
