@@ -83,17 +83,17 @@ export const saveInterview = async (req, res) => {
     let feedback = "";
     try {
       const feedbackPrompt = `
-        You are an expert technical interviewer. Based on the following interview results, provide a concise (3-4 sentences) personalized summary of the candidate's performance, highlighting strengths and areas for improvement.
+        You are an expert technical interviewer. Based on the following interview results, provide a comprehensive but concise (3-4 sentences) personalized summary of the candidate's performance. Mention specific strengths and areas where they can improve.
         
         Job Role: ${jobRole}
-        Overall Score: ${overallScore}
-        Answers: ${JSON.stringify(answers)}
+        Overall Score: ${overallScore}%
+        Answers Summary: ${JSON.stringify(answers.map(a => ({ question: a.question, correctness: a.correctness })))}
         
         Return ONLY a JSON object: { "summary": "your feedback summary here" }
       `;
       
       const rawFeedback = await generateWithGroq([
-        { role: "system", content: "You are a helpful AI interviewer that outputs JSON." },
+        { role: "system", content: "You are a professional hiring manager providing feedback. Output JSON." },
         { role: "user", content: feedbackPrompt }
       ]);
       
@@ -157,12 +157,14 @@ async function performAnalysis(question, transcript) {
     Question: ${question}
     Answer: ${transcript}
     
-    Scoring Rubric (0-100):
-    - 0: No answer, completely irrelevant (e.g., "I don't know", "pizza"), or gibberish.
-    - 1-30: Poor. Major misunderstandings, very brief, or lacks any technical depth.
-    - 31-60: Fair. Basic understanding but lacks detail, has some inaccuracies, or poor communication.
-    - 61-85: Good. Solid understanding, mostly correct, clear communication.
-    - 86-100: Excellent. Comprehensive, accurate, professional, and insightful.
+    Scoring Rubric (PERCENTAGE 0-100):
+    - 0: No answer, completely irrelevant, or gibberish.
+    - 1-40: Poor. Major misunderstandings, lacks depth, or very brief.
+    - 41-70: Fair. Basic understanding but lacks detail or has inaccuracies.
+    - 71-90: Good. Solid understanding, mostly correct, clear communication.
+    - 91-100: Excellent. Comprehensive, accurate, professional, and insightful.
+    
+    CRITICAL: Scores MUST be between 0 and 100. If you think the answer is a 7/10, return 70. If it's an 8.5/10, return 85.
     
     Provide the output in the following JSON format ONLY:
     {
@@ -177,12 +179,19 @@ async function performAnalysis(question, transcript) {
 
   try {
     const rawText = await generateWithGroq([
-        { role: "system", content: "You are a critical AI interviewer that outputs JSON. You do not give high scores for poor or irrelevant answers." },
+        { role: "system", content: "You are a critical AI interviewer. You MUST output scores on a 0-100 percentage scale. Never output single-digit scores unless the performance is truly near zero." },
         { role: "user", content: prompt }
     ]);
 
     console.log(" AI Analysis Result:", rawText);
-    return cleanAndParseJSON(rawText, false);
+    const analysis = cleanAndParseJSON(rawText, false);
+
+    // Safety check: If AI still returns 0-10, scale it up
+    if (analysis.fluencyScore <= 10 && analysis.fluencyScore > 0) analysis.fluencyScore *= 10;
+    if (analysis.correctnessScore <= 10 && analysis.correctnessScore > 0) analysis.correctnessScore *= 10;
+    if (analysis.confidenceScore <= 10 && analysis.confidenceScore > 0) analysis.confidenceScore *= 10;
+
+    return analysis;
   } catch (e) {
     console.error("Failed to parse analysis JSON:", e);
     return {

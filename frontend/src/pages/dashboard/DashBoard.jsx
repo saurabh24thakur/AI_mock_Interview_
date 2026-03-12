@@ -289,8 +289,7 @@ function Dashboard() {
                         <th className="p-4 font-medium">Job Role</th>
                         <th className="p-4 font-medium">Difficulty</th>
                         <th className="p-4 font-medium">Score</th>
-                        <th className="p-4 font-medium">Fluency</th>
-                        <th className="p-4 font-medium">Confidence</th>
+                        <th className="p-4 font-medium">Feedback Summary</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm text-gray-300">
@@ -308,8 +307,13 @@ function Dashboard() {
                             </span>
                           </td>
                           <td className="p-4 font-bold text-white">{interview.overallScore}%</td>
-                          <td className="p-4">{interview.fluency}</td>
-                          <td className="p-4">{interview.confidence}</td>
+                          <td className="p-4 text-gray-400 italic">
+                            {interview.feedback ? (
+                              interview.feedback.length > 60 
+                                ? `${interview.feedback.substring(0, 60)}...` 
+                                : interview.feedback
+                            ) : "No feedback available"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -339,7 +343,7 @@ function Dashboard() {
                       <th className="p-4 font-medium">Job Role</th>
                       <th className="p-4 font-medium">Difficulty</th>
                       <th className="p-4 font-medium">Score</th>
-                      <th className="p-4 font-medium">Status</th>
+                      <th className="p-4 font-medium">Feedback Summary</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm text-gray-300">
@@ -353,10 +357,12 @@ function Dashboard() {
                         <td className="p-4 font-medium text-white">{interview.jobRole}</td>
                         <td className="p-4 capitalize">{interview.difficulty}</td>
                         <td className="p-4 font-bold text-white">{interview.overallScore}%</td>
-                        <td className="p-4">
-                          <span className="text-gray-400 flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-white"></span> Completed
-                          </span>
+                        <td className="p-4 text-gray-400 italic">
+                          {interview.feedback ? (
+                            interview.feedback.length > 80 
+                              ? `${interview.feedback.substring(0, 80)}...` 
+                              : interview.feedback
+                          ) : "No feedback available"}
                         </td>
                       </tr>
                     ))}
@@ -479,19 +485,19 @@ function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-400">Fluency</span>
-                        <span className="font-medium text-white">{selectedInterview.fluency}</span>
+                        <span className="font-medium text-white">{selectedInterview.fluency}%</span>
                       </div>
                       <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                         <div className="bg-white h-full rounded-full" style={{ width: '75%' }}></div>
+                         <div className="bg-white h-full rounded-full" style={{ width: `${selectedInterview.fluency}%` }}></div>
                       </div>
                     </div>
                      <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-400">Confidence</span>
-                        <span className="font-medium text-white">{selectedInterview.confidence}</span>
+                        <span className="font-medium text-white">{selectedInterview.confidence}%</span>
                       </div>
                       <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                         <div className="bg-white h-full rounded-full" style={{ width: '80%' }}></div>
+                         <div className="bg-white h-full rounded-full" style={{ width: `${selectedInterview.confidence}%` }}></div>
                       </div>
                     </div>
                   </div>
